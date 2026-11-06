@@ -1,0 +1,183 @@
+<title>{{TITLE}}</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Manrope:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Même univers que Neon Mines : nuit bleutée, cyan gemme, rouge mine, or d'encaissement. */
+:root{
+  --bg:#060a14; --panel:#0f1830; --panel2:#0a1124; --line:#223463; --fg:#e9efff; --mute:#8d9bc6;
+  --gem:#2cf0c2; --gem2:#18a5ff; --gold:#ffc83d; --mine:#ff3d6e;
+  --f-display:'Unbounded','Trebuchet MS',sans-serif;
+  --f-body:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  margin:0;color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.4;
+  background:radial-gradient(1000px 520px at 85% -12%,rgba(24,165,255,.13),transparent 60%),radial-gradient(800px 520px at -10% 110%,rgba(44,240,194,.08),transparent 60%),var(--bg);
+  background-color:var(--bg);
+  padding-block:16px 28px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-tap-highlight-color:transparent;
+}
+[hidden]{display:none!important}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled,input:disabled{cursor:not-allowed}
+:focus-visible{outline:2px solid var(--gem);outline-offset:2px}
+.app{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:700;font-size:clamp(18px,3vw,24px);letter-spacing:.05em;text-transform:uppercase}
+.logo span{color:var(--gem)}
+.back{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);color:var(--mute);transition:.15s;flex:none}
+.back:hover{color:var(--gem);border-color:var(--gem2)}
+.back svg{width:18px;height:18px;filter:none}
+.logo svg{width:30px;height:30px;flex:none;filter:drop-shadow(0 0 10px rgba(44,240,194,.45))}
+.topr{display:flex;gap:10px;align-items:center}
+.sndb{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-weight:800;font-size:13px;color:var(--gem);transition:.15s}
+.sndb[aria-pressed="false"]{color:var(--mute)}
+.bal{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 14px;text-align:right;min-width:150px}
+.bal small{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.bal b{font-family:var(--f-mono);font-size:19px;color:var(--gold);font-variant-numeric:tabular-nums}
+.bal.up{animation:balup .5s ease-out}
+@keyframes balup{40%{box-shadow:0 0 0 3px rgba(255,200,61,.35),0 0 24px rgba(255,200,61,.3)}}
+.main{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.main{grid-template-columns:minmax(0,1fr)}.stagewrap{order:-1}}
+.panel,.stagewrap{background:linear-gradient(180deg,var(--panel),#0b1224);border:1px solid var(--line);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.stagewrap{position:relative}
+.field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.field>label,.lbl{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.row{display:flex;gap:8px;min-width:0}
+.inp{flex:1;min-width:0;display:flex;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:0 12px;transition:border-color .15s}
+.inp:focus-within{border-color:var(--gem2)}
+.inp input{width:100%;min-width:0;background:transparent;border:0;outline:0;padding:12px 0;font-family:var(--f-mono);font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}
+.inp input::placeholder{color:var(--mute);font-weight:500}
+.inp input:disabled{opacity:.55}
+.inp i{font-style:normal;color:var(--gold);font-family:var(--f-mono);font-weight:700;font-size:12px;margin-left:6px;white-space:nowrap}
+.inp.ro{background:#080e1e}
+.mini{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:0 13px;font-weight:800;min-width:46px;transition:.15s}
+.mini:hover:not(:disabled){border-color:var(--gem2)}
+.mini:disabled{opacity:.5}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:4px}
+.seg button{background:transparent;border:0;border-radius:10px;padding:10px 6px;font-weight:800;font-size:13px;color:var(--mute);transition:.15s}
+.seg button:hover:not(:disabled){color:var(--fg)}
+.seg button[aria-pressed="true"]{background:rgba(44,240,194,.14);color:var(--gem)}
+.seg button:disabled{opacity:.45}
+.cta{position:relative;border:0;border-radius:14px;padding:16px;font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:#04201b;background:linear-gradient(180deg,#46f3cf,#1fcaa6);box-shadow:0 5px 0 #128a73,0 10px 30px rgba(44,240,194,.25);transition:transform .08s,box-shadow .08s,filter .15s,background .2s}
+.cta:hover:not(:disabled){filter:brightness(1.06)}
+.cta:active:not(:disabled){transform:translateY(3px);box-shadow:0 2px 0 #128a73}
+.cta.cash{background:linear-gradient(180deg,#ffd76a,#f5b82e);color:#2a1a00;box-shadow:0 5px 0 #b07d10,0 10px 30px rgba(255,200,61,.3)}
+.cta.stop{background:linear-gradient(180deg,#ff7a9a,#e8395f);color:#2a0010;box-shadow:0 5px 0 #a3203f,0 10px 30px rgba(255,61,110,.25)}
+.cta:disabled{filter:grayscale(.65) brightness(.7)}
+.hint{margin:0;color:var(--mute);font-size:12px;line-height:1.35}
+.hist{display:flex;gap:6px;flex-wrap:wrap;min-height:28px}
+.hist span{font-family:var(--f-mono);font-size:12px;font-weight:700;padding:5px 9px;border-radius:9px}
+.hist span.new{animation:slidein .25s ease-out}
+.hist .w{background:rgba(44,240,194,.1);color:var(--gem);border:1px solid rgba(44,240,194,.3)}
+.hist .l{background:rgba(255,61,110,.1);color:var(--mine);border:1px solid rgba(255,61,110,.3)}
+.hist .none{color:var(--mute);font-size:12px;padding:5px 0}
+@keyframes slidein{from{opacity:0;transform:translateX(-8px)}}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stats div{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:8px 10px;min-width:0}
+.stats small{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.stats b{font-family:var(--f-mono);font-size:14px;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.pos{color:var(--gem)}.neg{color:var(--mine)}
+.status{margin:0;min-height:21px;color:var(--mute);font-weight:700;font-size:14px;text-align:center}
+.status b{color:var(--gem)}
+.status b.g{color:var(--gold)}
+.foot{text-align:center;color:var(--mute);font-size:12px;margin:0}
+.flash{position:fixed;inset:0;pointer-events:none;opacity:0;z-index:50}
+.flash.red{animation:flr .55s ease-out}
+.flash.gold{animation:flg .7s ease-out}
+@keyframes flr{0%{opacity:.55;background:radial-gradient(circle at 50% 45%,rgba(255,61,110,.45),transparent 70%)}100%{opacity:0}}
+@keyframes flg{0%{opacity:.55;background:radial-gradient(circle at 50% 45%,rgba(255,215,106,.4),transparent 70%)}100%{opacity:0}}
+.shake{animation:shake .42s}
+@keyframes shake{10%,90%{transform:translate3d(-2px,1px,0)}20%,80%{transform:translate3d(4px,-1px,0)}30%,50%,70%{transform:translate3d(-7px,2px,0)}40%,60%{transform:translate3d(7px,-2px,0)}}
+.gpop{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);opacity:0;pointer-events:none;z-index:6;background:rgba(10,17,36,.95);border:2px solid var(--gold);border-radius:18px;padding:16px 26px;text-align:center;box-shadow:0 0 50px rgba(255,200,61,.3),0 20px 50px rgba(0,0,0,.5);transition:transform .32s cubic-bezier(.3,1.5,.5,1),opacity .2s;white-space:nowrap}
+.gpop.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.gpop b{display:block;font-family:var(--f-display);font-weight:900;font-size:clamp(28px,6vw,44px);color:var(--gold);line-height:1.05}
+.gpop span{font-family:var(--f-mono);font-weight:700;font-size:16px;color:var(--gem)}
+.gpop small{display:block;margin-top:4px;font-size:12px;color:var(--mute);font-weight:700}
+.potbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.potbar div{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:9px 12px;min-width:0}
+.potbar small{display:block;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--mute);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.potbar b{display:block;font-family:var(--f-display);font-weight:900;font-size:clamp(17px,3vw,24px);font-variant-numeric:tabular-nums;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .2s}
+.potbar b.up{animation:potup .4s cubic-bezier(.3,1.6,.5,1);color:var(--gem)}
+.potbar b.g{color:var(--gold)}
+@keyframes potup{0%{transform:scale(1.15)}100%{transform:scale(1)}}
+.risk{display:flex;align-items:center;gap:8px}
+.risk input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:0;height:8px;border-radius:99px;background:linear-gradient(90deg,var(--gem) 0 var(--fill,10%),rgba(141,155,198,.2) var(--fill,10%) 100%);outline-offset:6px}
+.risk input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid var(--bg);box-shadow:0 0 0 2px var(--gem);cursor:grab}
+.risk input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--bg);box-shadow:0 0 0 2px var(--gem);cursor:grab}
+.risk input[type=range]:disabled{opacity:.5}
+.risk .mini{height:38px;min-width:38px;padding:0}
+.risk output{font-family:var(--f-display);font-weight:900;font-size:20px;min-width:2.2ch;text-align:center;color:var(--gold)}
+.subbtn{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px 14px;font-weight:800;font-size:13px;transition:.15s}
+.subbtn:hover:not(:disabled){border-color:var(--gem2)}
+.subbtn:disabled{opacity:.45}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01s!important;transition-duration:.01s!important}}
+{{CSS}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="logo"><a class="back" href="index.html" aria-label="Retour au choix des jeux" title="Tous les jeux"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>{{ICON}}<div>{{NAME_A}} <span>{{NAME_B}}</span></div></div>
+    <div class="topr">
+      <button class="sndb" id="snd" type="button" aria-pressed="true">Son</button>
+      <div class="bal" id="balbox"><small>Solde fictif</small><b id="bal">1 000,00</b></div>
+    </div>
+  </header>
+  <div class="main">
+    <aside class="panel" aria-label="Paramètres du pari">
+      <div class="seg" id="modeseg" role="group" aria-label="Mode de jeu">
+        <button type="button" data-mode="manual" aria-pressed="true">Manuel</button>
+        <button type="button" data-mode="auto" aria-pressed="false">Auto</button>
+      </div>
+      <div class="field">
+        <label for="bet">Mise</label>
+        <div class="row">
+          <div class="inp"><input id="bet" type="text" inputmode="decimal" autocomplete="off" value="10.00"><i>CR</i></div>
+          <button class="mini" id="half" type="button" title="Diviser par 2">½</button>
+          <button class="mini" id="dbl" type="button" title="Doubler">2×</button>
+          <button class="mini" id="max" type="button" title="Tout miser">Max</button>
+        </div>
+      </div>
+{{PARAMS}}
+      <div class="field" id="autofields" hidden>
+        <label for="autobets">Nombre de paris</label>
+        <div class="inp"><input id="autobets" type="number" min="1" step="1" inputmode="numeric" placeholder="∞" aria-label="Nombre de paris, vide pour l'infini"><i>paris</i></div>
+{{AUTOPARAMS}}
+        <p class="hint">Vide = à l’infini. Le bouton ou Espace arrête l’auto.</p>
+      </div>
+      <button class="cta" id="cta" type="button">Miser</button>
+      <p class="hint">Espace : {{KEYHINT}}</p>
+      <div class="field">
+        <span class="lbl">Derniers paris</span>
+        <div class="hist" id="hist"></div>
+      </div>
+      <div class="stats">
+        <div><small>Session</small><b id="s-profit">0,00</b></div>
+        <div><small>Paris</small><b id="s-played">0</b></div>
+        <div><small>Meilleur</small><b id="s-best">—</b></div>
+      </div>
+    </aside>
+    <section class="stagewrap" id="stage" aria-label="Plateau">
+{{STAGE}}
+    </section>
+  </div>
+  <p class="foot">Jeu de simulation en crédits fictifs. Aucun argent réel n’est en jeu.</p>
+</div>
+<div class="flash" id="flash"></div>
+
+<script>
+(()=>{
+'use strict';
+const KEY='{{KEY}}';
+{{KIT}}
+{{GAME}}
+})();
+</script>

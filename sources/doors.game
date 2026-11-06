@@ -1,0 +1,208 @@
+@@META
+title=Neon Doors
+icon=<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="7" width="7.5" height="21" rx="2" fill="#2cf0c2"/><rect x="12.25" y="4" width="7.5" height="24" rx="2" fill="#ffc83d"/><rect x="21.5" y="7" width="7.5" height="21" rx="2" fill="#ff3d6e"/><circle cx="8.5" cy="18" r="1" fill="#04201b"/><circle cx="17.7" cy="17" r="1" fill="#2a1a00"/><circle cx="27" cy="18" r="1" fill="#2a0010"/></svg>
+a=Neon
+b=Doors
+key=neon-doors-v1
+keyhint=miser / encaisser — 1, 2, 3 : choisir une porte
+@@CSS
+.dtrack2{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px}
+.dstep{height:30px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);display:grid;place-items:center;font-family:var(--f-mono);font-size:11px;font-weight:700;color:var(--mute);transition:.25s;min-width:0;overflow:hidden;white-space:nowrap}
+.dstep.ok{background:rgba(44,240,194,.12);border-color:rgba(44,240,194,.45);color:var(--gem)}
+.dstep.ok.t1{background:rgba(255,200,61,.12);border-color:rgba(255,200,61,.45);color:var(--gold)}
+.dstep.ok.t2,.dstep.ok.t3{background:rgba(255,61,110,.12);border-color:rgba(255,61,110,.45);color:#ff8aa6}
+.dstep.now{border-color:var(--fg);color:var(--fg);box-shadow:0 0 0 1px var(--fg)}
+.dstep.ko{background:rgba(255,61,110,.18);border-color:var(--mine);color:var(--mine)}
+.dpot{display:flex;align-items:flex-end;justify-content:center;gap:18px;flex-wrap:wrap;text-align:center}
+.dpot div small{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.dpot div b{display:block;font-family:var(--f-display);font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1}
+#dmul{font-size:clamp(34px,7vw,58px);color:var(--fg);transition:color .2s}
+#dmul.up{animation:dup .4s cubic-bezier(.3,1.6,.5,1);color:var(--gem)}
+@keyframes dup{0%{transform:scale(1.18)}100%{transform:scale(1)}}
+#dgain{font-size:clamp(18px,3.4vw,26px);color:var(--gold)}
+.doors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,2vw,16px);width:min(100%,620px);margin:0 auto;perspective:900px}
+.door{--c:#2cf0c2;--cd:#0f6b5a;position:relative;border:0;padding:0;background:transparent;border-radius:18px;aspect-ratio:3/4.4;cursor:pointer;color:var(--fg);text-align:center;transition:transform .2s cubic-bezier(.3,1.5,.5,1),filter .2s;touch-action:manipulation}
+.door.t1{--c:#ffc83d;--cd:#7a5a10}.door.t2{--c:#ff3d6e;--cd:#7a1830}.door.t3{--c:#c58bff;--cd:#4b2a7a}
+.door:not(:disabled):hover{transform:translateY(-6px)}
+.door:not(:disabled):active{transform:translateY(-2px) scale(.98)}
+.door:disabled{cursor:default}
+.dframe{position:absolute;inset:0;border-radius:18px;background:#070d1c;border:2px solid var(--c);box-shadow:0 0 0 1px rgba(0,0,0,.3),0 0 28px color-mix(in srgb,var(--c) 30%,transparent),inset 0 0 30px rgba(0,0,0,.6);overflow:hidden}
+.dinside{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:6px;opacity:0;transition:opacity .2s .15s}
+.dinside svg{width:46%;height:auto}
+.dinside b{font-family:var(--f-display);font-weight:900;font-size:clamp(13px,2.4vw,18px)}
+.door.win .dinside{background:radial-gradient(circle at 50% 45%,rgba(44,240,194,.35),transparent 70%)}
+.door.win .dinside b{color:var(--gem)}
+.door.lose .dinside{background:radial-gradient(circle at 50% 45%,rgba(255,61,110,.4),transparent 70%)}
+.door.lose .dinside b{color:var(--mine)}
+.door.open .dinside{opacity:1}
+.dleaf{position:absolute;top:0;bottom:0;width:50%;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 22%,#14204a),#0f1830);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);transition:transform .55s cubic-bezier(.6,0,.25,1);display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.dleaf.l{left:0;border-radius:16px 0 0 16px;transform-origin:left center;align-items:flex-end}
+.dleaf.r{right:0;border-radius:0 16px 16px 0;transform-origin:right center;align-items:flex-start}
+.door.open .dleaf.l{transform:translateX(-102%)}
+.door.open .dleaf.r{transform:translateX(102%)}
+.dface{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(4px,1vw,10px);pointer-events:none;transition:opacity .2s;z-index:2;padding:8px}
+.door.open .dface{opacity:0}
+.dface .tier{font-size:clamp(10px,1.6vw,12px);font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--c)}
+.dface .pct{font-family:var(--f-display);font-weight:900;font-size:clamp(26px,5.6vw,46px);line-height:1}
+.dface .pct small{font-size:.5em;margin-left:2px}
+.dface .mx{font-family:var(--f-mono);font-weight:700;font-size:clamp(14px,2.6vw,20px);color:#04201b;background:var(--c);padding:4px 10px;border-radius:9px}
+.dface .key{font-family:var(--f-mono);font-size:10px;color:var(--mute);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.dknob{position:absolute;top:80%;width:6px;height:16px;border-radius:3px;background:var(--c);opacity:.7;transform:translateY(-50%)}
+.dleaf.l .dknob{right:8px}.dleaf.r .dknob{left:8px}
+.door.ghost{filter:saturate(.35) brightness(.7)}
+.door.picked{transform:translateY(-6px)}
+.door.enter{animation:denter .42s cubic-bezier(.3,1.4,.5,1) both}
+.door.enter:nth-child(2){animation-delay:.06s}.door.enter:nth-child(3){animation-delay:.12s}
+@keyframes denter{0%{opacity:0;transform:translateY(24px) scale(.94)}100%{opacity:1;transform:none}}
+.doors.idle .door{filter:saturate(.5) brightness(.75)}
+.dwrap{position:relative}
+.dpop{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);opacity:0;pointer-events:none;z-index:5;background:rgba(10,17,36,.95);border:2px solid var(--gold);border-radius:18px;padding:16px 26px;text-align:center;box-shadow:0 0 50px rgba(255,200,61,.3),0 20px 50px rgba(0,0,0,.5);transition:transform .32s cubic-bezier(.3,1.5,.5,1),opacity .2s}
+.dpop.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.dpop b{display:block;font-family:var(--f-display);font-weight:900;font-size:clamp(28px,6vw,44px);color:var(--gold);line-height:1.05}
+.dpop span{font-family:var(--f-mono);font-weight:700;font-size:16px;color:var(--gem)}
+@media (max-width:520px){.dtrack2{gap:3px}.dstep{font-size:9px;height:26px}}
+@@PARAMS
+      <p class="hint">À chaque étape, 3 portes : plus la chance est faible, plus elle paie. Encaisse quand tu veux, jusqu’à 10 portes.</p>
+@@AUTO
+        <span class="lbl">Porte choisie</span>
+        <div class="seg" id="atier" role="group" aria-label="Porte choisie en auto"><button type="button" data-v="0">Sûre</button><button type="button" data-v="1">Moyenne</button><button type="button" data-v="2">Risquée</button></div>
+        <label for="asteps">Encaisser après</label>
+        <div class="inp"><input id="asteps" type="number" min="1" max="10" step="1" value="3" inputmode="numeric"><i>portes</i></div>
+@@STAGE
+      <div class="dpot">
+        <div><small>Multiplicateur</small><b id="dmul">1,00×</b></div>
+        <div><small>Gain potentiel</small><b id="dgain">0,00</b></div>
+      </div>
+      <div class="dtrack2" id="dtrack" aria-label="Progression"></div>
+      <p class="status" id="status" aria-live="polite">Mise, puis choisis une porte : plus elle est risquée, plus elle paie.</p>
+      <div class="dwrap">
+        <div class="doors idle" id="doors"></div>
+        <div class="dpop" id="dpop" aria-live="polite"><b id="dpm">×1,00</b><span id="dpp">+0,00</span></div>
+      </div>
+@@JS
+/* ================= DOORS =================
+   Chaque porte affiche sa chance p et un multiplicateur juste (1/p, arrondi vers le bas).
+   Le gain final retient 1 % : retour au joueur 99 % quelle que soit la stratégie. */
+const MAXS=10, EDGE=.99;
+const TIERS=[{n:'Sûre',lo:1.17,hi:1.5},{n:'Moyenne',lo:1.72,hi:2.38},{n:'Risquée',lo:3.34,hi:6.25},{n:'Jackpot',lo:12.5,hi:20}];
+const GEMI='<svg viewBox="0 0 64 64" aria-hidden="true"><polygon points="18,12 46,12 60,26 32,58 4,26" fill="#2cf0c2"/><polygon points="18,12 32,26 4,26" fill="#7ffbe3"/><polygon points="46,12 60,26 32,26" fill="#1fb5b0"/></svg>';
+const ALARM='<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="34" r="20" fill="#3a1220" stroke="#ff3d6e" stroke-width="3"/><path d="M24 26 L40 42 M40 26 L24 42" stroke="#ff3d6e" stroke-width="5" stroke-linecap="round"/></svg>';
+const D={ state:'idle', bet:0, pot:1, step:0, offer:[], hist:[], locked:false, tier:(store.atier>=0&&store.atier<3)?store.atier:0, steps:(store.asteps>=1&&store.asteps<=10)?store.asteps:3, resolve:null };
+const doorsEl=$('#doors');
+function status(h){ $('#status').innerHTML=h; }
+const nf=v=>v.toFixed(2).replace('.',',');
+const pct=p=>{ const v=Math.round(p*1000)/10; return (v%1?v.toFixed(1):String(v)).replace('.',','); };
+const lab=m=>(m>=1000?Math.floor(m).toLocaleString('fr-FR'):m>=100?m.toFixed(1).replace('.',','):nf(m))+'×';
+const total=()=>Math.floor(D.pot*EDGE*100)/100;
+function makeOffer(){
+  /* on tire le multiplicateur, la chance en découle exactement : p = 1/m (pari juste) */
+  const mk=t=>{ const T=TIERS[t], m=Math.round((T.lo+rnd()*(T.hi-T.lo))*100)/100; return {t,m,p:1/m}; };
+  const o=[mk(0),mk(1),mk(2)]; if(rnd()<.12) o[2]=mk(3); return o;
+}
+function renderDoors(enter){
+  doorsEl.innerHTML='';
+  D.offer.forEach((o,i)=>{
+    const b=document.createElement('button'); b.type='button'; b.className='door t'+o.t+(enter?' enter':''); b.dataset.i=i;
+    b.setAttribute('aria-label','Porte '+TIERS[o.t].n+', '+pct(o.p)+' % de chance, multiplicateur '+nf(o.m));
+    b.innerHTML='<div class="dframe"><div class="dinside"></div><div class="dleaf l"><span class="dknob"></span></div><div class="dleaf r"><span class="dknob"></span></div></div>'+
+      '<div class="dface"><span class="tier">'+TIERS[o.t].n+'</span><span class="pct">'+pct(o.p)+'<small>%</small></span><span class="mx">×'+nf(o.m)+'</span><span class="key">'+(i+1)+'</span></div>';
+    b.addEventListener('click',()=>choose(i)); doorsEl.appendChild(b);
+  });
+  doorsEl.classList.toggle('idle',D.state!=='playing'); syncDoors();
+}
+function syncDoors(){ doorsEl.querySelectorAll('.door').forEach(b=>b.disabled=D.state!=='playing'||auto); }  /* la mise verrouillée ne doit pas bloquer les portes */
+function track(){
+  const T=$('#dtrack'); T.innerHTML='';
+  for(let i=0;i<MAXS;i++){ const s=document.createElement('div'); s.className='dstep'; const h=D.hist[i];
+    if(h){ s.classList.add(h.ok?'ok':'ko','t'+h.t); s.textContent=h.ok?'×'+nf(h.m).replace(/,00$/,''):'✕'; }
+    else if(D.state==='playing'&&i===D.step){ s.classList.add('now'); s.textContent=String(i+1); }
+    else s.textContent=String(i+1);
+    T.appendChild(s); }
+}
+function hudPot(bump){ const m=$('#dmul'); m.textContent=lab(D.state==='idle'?1:total()); $('#dgain').textContent=fmt(D.state==='idle'?0:D.bet*total()); if(bump){ m.classList.remove('up'); void m.offsetWidth; m.classList.add('up'); } }
+
+function start(){
+  if(D.state==='playing'||D.state==='reveal') return null;
+  const b=takeBet(); if(!b){ refresh(); return null; }
+  Object.assign(D,{state:'playing',bet:b,pot:1,step:0,hist:[]}); $('#dpop').classList.remove('show');
+  $('#dmul').classList.remove('up'); D.offer=makeOffer(); renderDoors(true); track(); hudPot(false); lock(true);
+  status('Choisis une porte.'); sfx.whoosh(); refresh();
+  return new Promise(r=>D.resolve=r);
+}
+async function choose(i){
+  if(D.state!=='playing') return;
+  const o=D.offer[i]; D.state='reveal'; syncDoors(); refresh();
+  const ok=rnd()<o.p;
+  const btns=[...doorsEl.querySelectorAll('.door')];
+  btns.forEach((b,j)=>{ if(j!==i) b.classList.add('ghost'); });
+  const me=btns[i]; me.classList.add('picked',ok?'win':'lose');
+  me.querySelector('.dinside').innerHTML=(ok?GEMI:ALARM)+'<b>'+(ok?'×'+nf(o.m):'Alarme !')+'</b>';
+  sfx.noise(.35,{v:.08,type:'bandpass',f0:500,f1:1400,q:1.4,a:.05});
+  await wait(auto?60:120); me.classList.add('open');
+  await wait(auto?260:420);
+  /* les autres portes révèlent ce qu'elles cachaient */
+  btns.forEach((b,j)=>{ if(j===i) return; const oo=D.offer[j], w=rnd()<oo.p; b.classList.add(w?'win':'lose','open'); b.querySelector('.dinside').innerHTML=(w?GEMI:ALARM)+'<b>'+(w?'×'+nf(oo.m):'Alarme')+'</b>'; });
+  if(!ok){ D.hist.push({ok:false,t:o.t,m:o.m}); track(); lose(); return; }
+  D.pot*=o.m; D.step++; D.hist.push({ok:true,t:o.t,m:o.m}); track(); hudPot(true);
+  sfx.thump(Math.min(11,D.step+o.t*2)); if(o.t>=2) sfx.win(o.t===3?2:1); vib(12);
+  if(D.step>=MAXS){ await wait(350); cashout(true); return; }
+  status('Bravo ! '+lab(total())+' · encaisse '+fmt(D.bet*total())+' ou tente la porte suivante.');
+  await wait(auto?240:620);
+  if(D.state!=='reveal') return;
+  D.state='playing'; D.offer=makeOffer(); renderDoors(true); track(); refresh();
+  if(D.autoNext){ const f=D.autoNext; D.autoNext=null; f(); }
+}
+function lose(){
+  sfx.boom(); flash('red'); shake($('#stage')); vib([60,40,120]);
+  settle(D.bet,0); hist('0,00×',false); status('Alarme ! Tu perds '+fmt(D.bet)+'.');
+  D.pot=0; $('#dmul').textContent='0,00×'; $('#dgain').textContent='0,00'; finish();
+}
+function cashout(full){
+  if(D.state!=='playing'&&!(full&&D.state==='reveal')) return;
+  if(D.step<1) return;
+  const m=total(), pay=settle(D.bet,m); hist(lab(m),m>=1);
+  $('#dpm').textContent=lab(m); $('#dpp').textContent='+'+fmt(pay); $('#dpop').classList.add('show');
+  const tier=m<2?0:m<5?1:m<20?2:3; sfx.thump(Math.min(11,4+tier*2)); sfx.win(tier); if(m>=5){ flash('gold'); vib([30,30,60]); } else vib(15);
+  status((full?'Toutes les portes passées ! ':'Encaissé ! ')+lab(m)+' · <b'+(m>=5?' class="g"':'')+'>+'+fmt(pay)+'</b>');
+  doorsEl.querySelectorAll('.door').forEach(b=>b.disabled=true);
+  finish();
+}
+function finish(){ D.state='over'; doorsEl.classList.add('idle'); track(); lock(auto); refresh(); const r=D.resolve; D.resolve=null; r&&r(); }
+
+/* auto : même porte à chaque étape, encaisse après N portes */
+async function autoRound(){
+  const pr=start(); if(!pr) return;
+  const target=Math.max(1,Math.min(MAXS,parseInt($('#asteps').value)||1));
+  const play=async()=>{
+    while(D.state==='playing'||D.state==='reveal'){
+      if(D.state==='playing'){
+        if(D.step>=target){ cashout(false); break; }
+        await wait(260); if(D.state!=='playing') break;
+        const want=D.tier, i=D.offer.findIndex(o=>Math.min(o.t,2)===want); choose(i<0?0:i);
+      }
+      await wait(60);
+    }
+  };
+  play(); return pr;
+}
+document.addEventListener('keydown',e=>{ if(e.target&&e.target.tagName==='INPUT') return; const n=+e.key; if(n>=1&&n<=3&&D.state==='playing'&&!auto) choose(n-1); });
+function tierSync(){ document.querySelectorAll('#atier button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.v===D.tier))); }
+$('#atier').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||b.disabled) return; D.tier=+b.dataset.v; tierSync(); sfx.ui(); save(); });
+$('#asteps').value=D.steps; $('#asteps').addEventListener('change',e=>{ const v=Math.max(1,Math.min(MAXS,parseInt(e.target.value)||1)); e.target.value=v; D.steps=v; save(); });
+
+const G={
+  main(){ if(D.state==='playing'){ if(D.step>=1) cashout(false); return; } if(D.state==='reveal') return; start(); },
+  cta(){
+    if(D.state==='reveal') return {label:'Ouverture…',disabled:true};
+    if(D.state==='playing') return D.step<1?{label:'Choisis une porte',disabled:true}:{label:'Encaisser '+fmt(D.bet*total()),cls:'cash'};
+    return {label:'Miser'};
+  },
+  busy:()=>D.state==='playing'||D.state==='reveal',
+  autoReady:()=>true,
+  autoStep(){ return autoRound()||Promise.resolve(); },
+  autoGap:()=>700,
+  lock(l){ D.locked=l; document.querySelectorAll('#atier button').forEach(b=>b.disabled=l); $('#asteps').disabled=l; syncDoors(); },
+  saveState:()=>({atier:D.tier,asteps:D.steps}),
+  status
+};
+D.offer=makeOffer(); renderDoors(false); track(); hudPot(false); tierSync(); kitInit();

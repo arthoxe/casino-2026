@@ -1,0 +1,133 @@
+@@META
+title=Neon Keno
+icon=<svg viewBox="0 0 32 32" aria-hidden="true"><g fill="#2f4553"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="12.5" y="3" width="7" height="7" rx="2"/><rect x="3" y="12.5" width="7" height="7" rx="2"/><rect x="22" y="12.5" width="7" height="7" rx="2"/><rect x="12.5" y="22" width="7" height="7" rx="2"/><rect x="22" y="22" width="7" height="7" rx="2"/></g><rect x="22" y="3" width="7" height="7" rx="2" fill="#2cf0c2"/><rect x="12.5" y="12.5" width="7" height="7" rx="2" fill="#2cf0c2"/><rect x="3" y="22" width="7" height="7" rx="2" fill="#18a5ff"/></svg>
+a=Neon
+b=Keno
+key=neon-keno-v1
+keyhint=lancer le tirage / arrêter l’auto
+@@CSS
+.kwrap{position:relative;width:min(100%,640px);margin:0 auto}
+.kgrid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:clamp(5px,1.2vw,9px)}
+.kt{position:relative;aspect-ratio:1;border:0;padding:0;border-radius:12px;background:transparent;font-family:var(--f-mono);font-weight:700;font-size:clamp(12px,2.2vw,17px);color:var(--fg);touch-action:manipulation}
+.kt .f,.kt .b{position:absolute;inset:0;border-radius:12px;display:grid;place-items:center}
+.kt .f{background:#2f4553;box-shadow:0 4px 0 #1f3140;transition:background .15s,transform .14s ease-in,opacity .14s}
+.kt:not(:disabled):hover .f{background:#557086;transform:translateY(-2px)}
+.kt.sel .f{background:#1b8f86;box-shadow:0 4px 0 #11524e,0 0 0 2px rgba(44,240,194,.7),0 0 18px rgba(44,240,194,.35);animation:ksel .26s cubic-bezier(.3,1.6,.5,1)}
+@keyframes ksel{0%{transform:scale(.92)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
+.kt .b{transform:scale(0);opacity:0;transition:transform .32s cubic-bezier(.3,1.7,.5,1) .1s,opacity .1s .1s}
+.kt.drawn .f{transform:scale(0);opacity:0}
+.kt.drawn .b{transform:scale(1);opacity:1}
+.kt.miss .b{background:#0a1626;color:var(--mine);box-shadow:inset 0 0 0 1px rgba(255,61,110,.25)}
+.kt.hit .b{background:linear-gradient(180deg,#46f3cf,#1fcaa6);color:#04201b;box-shadow:0 4px 0 #128a73,0 0 22px rgba(44,240,194,.45)}
+.kt.hit .b svg{position:absolute;width:34%;height:34%;top:7%;right:7%;opacity:.55}
+.kt:disabled{cursor:default}
+.kpay{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;width:min(100%,640px);margin:0 auto}
+.kpay div{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);min-width:0;transition:border-color .2s,transform .2s,background .2s}
+.kpay b{font-family:var(--f-mono);font-size:clamp(9px,1.5vw,12px);font-weight:700;white-space:nowrap}
+.kpay small{font-size:10px;color:var(--mute);font-weight:700}
+.kpay div.z b{color:var(--mute)}
+.kpay div.on{border-color:var(--gem);background:rgba(44,240,194,.1);transform:translateY(-2px)}
+.kpay div.on b{color:var(--gem)}
+.kempty{text-align:center;color:var(--mute);font-size:13px;padding:10px 0}
+.kpop{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);opacity:0;pointer-events:none;z-index:5;background:rgba(10,17,36,.94);border:2px solid var(--gold);border-radius:18px;padding:16px 26px;text-align:center;box-shadow:0 0 50px rgba(255,200,61,.3),0 20px 50px rgba(0,0,0,.5);transition:transform .32s cubic-bezier(.3,1.5,.5,1),opacity .2s}
+.kpop.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.kpop b{display:block;font-family:var(--f-display);font-weight:900;font-size:clamp(28px,6vw,44px);color:var(--gold);line-height:1.05}
+.kpop span{font-family:var(--f-mono);font-weight:700;font-size:16px;color:var(--gem)}
+.kbtns{display:flex;gap:8px}
+.kbtns button{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px 8px;font-weight:800;font-size:13px;transition:.15s}
+.kbtns button:hover:not(:disabled){border-color:var(--gem2)}
+.kbtns button:disabled{opacity:.5}
+@@PARAMS
+      <div class="field">
+        <span class="lbl">Risque</span>
+        <div class="seg" id="risk" role="group" aria-label="Risque"><button type="button" data-v="low">Faible</button><button type="button" data-v="med">Moyen</button><button type="button" data-v="high">Élevé</button></div>
+      </div>
+      <div class="field">
+        <span class="lbl">Numéros <b id="kcount" style="color:var(--gold);font-family:var(--f-mono)">0/10</b></span>
+        <div class="kbtns"><button type="button" id="kauto">Choix au hasard</button><button type="button" id="kclear">Effacer</button></div>
+      </div>
+@@AUTO
+@@STAGE
+      <p class="status" id="status" aria-live="polite">Choisis de 1 à 10 numéros, puis mise : 10 numéros sont tirés.</p>
+      <div class="kwrap">
+        <div class="kgrid" id="kgrid" role="group" aria-label="Grille de 40 numéros"></div>
+        <div class="kpop" id="kpop" aria-live="polite"><b id="kpm">×1,00</b><span id="kpp">+0,00</span></div>
+      </div>
+      <div class="kpay" id="kpay"></div>
+@@JS
+/* ================= KENO ================= */
+const N=40, DRAW=10, GEM='<svg viewBox="0 0 64 64" aria-hidden="true"><polygon points="18,12 46,12 60,26 32,58 4,26" fill="#04201b"/></svg>';
+const K={ risk:['low','med','high'].includes(store.risk)?store.risk:'med', picks:new Set(Array.isArray(store.picks)?store.picks.filter(x=>x>=1&&x<=N).slice(0,10):[]), busy:false, locked:false, drawn:false };
+const tiles=[]; const grid=$('#kgrid');
+function status(h){ $('#status').innerHTML=h; }
+/* table de gains : calculée pour un retour de 99 % (probabilités hypergéométriques) */
+const C=(n,k)=>{ if(k<0||k>n) return 0; let r=1; for(let i=1;i<=k;i++) r=r*(n-k+i)/i; return r; };
+const prob=(n,h)=>C(n,h)*C(N-n,DRAW-h)/C(N,DRAW);
+function table(n,risk){
+  if(n<1) return [];
+  const cfg={low:{g:1.55,t:.25},med:{g:2.3,t:.4},high:{g:4.2,t:.55}}[risk];
+  const m=Math.max(1,Math.round(n*cfg.t)), raw=[]; for(let h=0;h<=n;h++) raw.push(h>=m?Math.pow(cfg.g,h-m):0);
+  let ev=0; for(let h=0;h<=n;h++) ev+=prob(n,h)*raw[h];
+  const k=.99/ev; return raw.map(x=>{ const v=x*k; if(v===0) return 0; return v>=100?Math.round(v):v>=10?Math.round(v*10)/10:Math.round(v*100)/100; });
+}
+const lab=m=>(m>=100?String(m):m>=10?m.toFixed(1):m.toFixed(2)).replace('.',',')+'×';
+function payRow(hits){
+  const P=$('#kpay'), n=K.picks.size; P.innerHTML='';
+  if(!n){ P.style.display='block'; P.innerHTML='<div class="kempty">Choisis des numéros pour voir les gains</div>'; return; }
+  P.style.display=''; const T=table(n,K.risk);
+  T.forEach((m,h)=>{ const d=document.createElement('div'); if(m===0) d.className='z'; if(hits===h) d.classList.add('on'); d.innerHTML='<b></b><small></small>'; d.querySelector('b').textContent=lab(m); d.querySelector('small').textContent=h+' ✦'; P.appendChild(d); });
+}
+for(let i=1;i<=N;i++){
+  const t=document.createElement('button'); t.type='button'; t.className='kt'; t.setAttribute('aria-label','Numéro '+i);
+  t.innerHTML='<span class="f">'+i+'</span><span class="b">'+i+'</span>';
+  t.addEventListener('click',()=>toggle(i)); grid.appendChild(t); tiles[i]=t;
+}
+function clearDraw(){ if(!K.drawn) return; K.drawn=false; tiles.forEach(t=>t&&t.classList.remove('drawn','hit','miss')); tiles.forEach(t=>{ if(t){ const s=t.querySelector('.b svg'); if(s) s.remove(); } }); $('#kpop').classList.remove('show'); payRow(-1); }
+function syncPicks(){ for(let i=1;i<=N;i++) tiles[i].classList.toggle('sel',K.picks.has(i)); $('#kcount').textContent=K.picks.size+'/10'; payRow(-1); refresh(); }
+function toggle(i){
+  if(K.busy||K.locked) return; clearDraw();
+  if(K.picks.has(i)){ K.picks.delete(i); sfx.tone(300,.08,{type:'triangle',v:.08,slide:.6}); }
+  else{ if(K.picks.size>=10){ sfx.tick(200,.05); status('Maximum : 10 numéros.'); return; } K.picks.add(i); sfx.thump(Math.min(9,K.picks.size-1),.55); }
+  syncPicks(); save();
+}
+$('#kauto').addEventListener('click',()=>{ if(K.busy||K.locked) return; clearDraw(); const n=K.picks.size||10; K.picks.clear(); const a=[...Array(N).keys()].map(x=>x+1); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } a.slice(0,n).forEach(x=>K.picks.add(x)); sfx.whoosh(); syncPicks(); save(); });
+$('#kclear').addEventListener('click',()=>{ if(K.busy||K.locked) return; clearDraw(); K.picks.clear(); sfx.ui(); syncPicks(); save(); });
+
+async function play(){
+  if(K.busy||!K.picks.size) return null;
+  const b=takeBet(); if(!b){ refresh(); return null; }
+  K.busy=true; applyLock(); clearDraw(); refresh();
+  const a=[...Array(N).keys()].map(x=>x+1); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  const draw=a.slice(0,DRAW), T=table(K.picks.size,K.risk), step=auto?85:150;
+  K.drawn=true; let hits=0;
+  for(let i=0;i<DRAW;i++){
+    const x=draw[i], t=tiles[x], hit=K.picks.has(x);
+    t.classList.add('drawn',hit?'hit':'miss');
+    if(hit){ hits++; t.querySelector('.b').insertAdjacentHTML('beforeend',GEM); sfx.thump(Math.min(11,hits*1.2+1)); payRow(hits); vib(8); }
+    else sfx.tick(260+i*8,.035);
+    await wait(step);
+  }
+  const m=T[hits]||0, pay=settle(b,m);
+  if(m>0){ $('#kpm').textContent=lab(m); $('#kpp').textContent='+'+fmt(pay); $('#kpop').classList.add('show');
+    const tier=m<2?0:m<5?1:m<20?2:3; if(m>=1.5) sfx.win(tier); if(m>=10){ flash('gold'); vib([30,30,60]); }
+    status(hits+' numéro'+(hits>1?'s':'')+' trouvé'+(hits>1?'s':'')+' · '+lab(m)+' · <b'+(m>=5?' class="g"':'')+'>+'+fmt(pay)+'</b>'); }
+  else{ sfx.dull(); status(hits+' numéro'+(hits>1?'s':'')+' trouvé'+(hits>1?'s':'')+' · perdu −'+fmt(b)); }
+  hist(lab(m),m>=1);
+  K.busy=false; applyLock(); refresh(); return m;
+}
+function segSync(){ document.querySelectorAll('#risk button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===K.risk))); }
+function applyLock(){ const d=K.locked||K.busy; document.querySelectorAll('#risk button,#kauto,#kclear').forEach(b=>b.disabled=d); tiles.forEach(t=>t&&(t.disabled=d)); }
+$('#risk').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||b.disabled) return; K.risk=b.dataset.v; segSync(); sfx.ui(); clearDraw(); payRow(-1); save(); });
+
+const G={
+  main(){ if(!K.picks.size){ status('Choisis au moins un numéro (ou « Choix au hasard »).'); sfx.tick(200,.05); return; } play(); },
+  cta(){ if(K.busy) return {label:'Tirage…',disabled:true}; return {label:'Miser',disabled:!K.picks.size}; },
+  busy:()=>K.busy,
+  autoReady(show){ const ok=K.picks.size>0; if(!ok&&show) status('Choisis des numéros avant de lancer l’auto.'); return ok; },
+  autoStep(){ return play()||Promise.resolve(); },
+  autoGap:()=>650,
+  lock(l){ K.locked=l; applyLock(); },
+  saveState:()=>({risk:K.risk,picks:[...K.picks]}),
+  status
+};
+segSync(); syncPicks(); kitInit();

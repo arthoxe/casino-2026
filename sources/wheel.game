@@ -1,0 +1,151 @@
+@@META
+title=Neon Wheel
+icon=<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="17" r="12" fill="none" stroke="#2cf0c2" stroke-width="5" stroke-dasharray="6 3.4"/><circle cx="16" cy="17" r="5" fill="#0a1124" stroke="#18a5ff" stroke-width="2"/><path d="M16 1 l4 6 h-8z" fill="#ffc83d"/></svg>
+a=Neon
+b=Wheel
+key=neon-wheel-v1
+keyhint=faire tourner la roue / arrêter l’auto
+@@CSS
+.wstage{display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:4px}
+.wbox{position:relative;width:min(100%,460px);aspect-ratio:1}
+.wbox canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.wptr{position:absolute;left:50%;top:-2px;width:34px;height:40px;transform:translateX(-50%) rotate(var(--fl,0deg));transform-origin:50% 20%;z-index:2;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5));transition:transform .18s cubic-bezier(.3,1.6,.5,1)}
+.wptr svg{width:100%;height:100%}
+.wcenter{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;text-align:center}
+.wcenter b{font-family:var(--f-display);font-weight:900;font-size:clamp(26px,6vw,46px);line-height:1;font-variant-numeric:tabular-nums;color:var(--fg);transition:color .2s}
+.wcenter small{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.wcenter.pop b{animation:wpop .4s cubic-bezier(.3,1.6,.5,1)}
+@keyframes wpop{0%{transform:scale(.7)}100%{transform:scale(1)}}
+.wlegend{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:100%}
+.wlegend span{display:flex;align-items:center;gap:7px;font-family:var(--f-mono);font-weight:700;font-size:13px;padding:7px 11px;border-radius:11px;background:var(--panel2);border:1px solid var(--line);transition:transform .2s,border-color .2s,box-shadow .2s}
+.wlegend span i{width:10px;height:10px;border-radius:3px;display:block;flex:none}
+.wlegend span em{font-style:normal;color:var(--mute);font-weight:500;font-size:11px}
+.wlegend span.on{transform:translateY(-3px);border-color:var(--c);box-shadow:0 0 0 1px var(--c),0 8px 22px rgba(0,0,0,.35)}
+@@PARAMS
+      <div class="field">
+        <span class="lbl">Risque</span>
+        <div class="seg" id="risk" role="group" aria-label="Risque"><button type="button" data-v="low">Faible</button><button type="button" data-v="med">Moyen</button><button type="button" data-v="high">Élevé</button></div>
+      </div>
+      <div class="field">
+        <span class="lbl">Segments</span>
+        <div class="seg" id="segs" role="group" aria-label="Nombre de segments"><button type="button" data-v="10">10</button><button type="button" data-v="20">20</button><button type="button" data-v="30">30</button><button type="button" data-v="40">40</button><button type="button" data-v="50">50</button></div>
+      </div>
+@@AUTO
+@@STAGE
+      <p class="status" id="status" aria-live="polite">Choisis le risque et le nombre de segments, puis fais tourner.</p>
+      <div class="wstage">
+        <div class="wbox" id="wbox">
+          <canvas id="wcv" aria-hidden="true"></canvas>
+          <div class="wptr" id="wptr" aria-hidden="true"><svg viewBox="0 0 34 40"><path d="M17 38 L4 8 Q17 -2 30 8 Z" fill="#ffc83d" stroke="#7a5200" stroke-width="1.5"/><circle cx="17" cy="11" r="4" fill="#fff6d6"/></svg></div>
+          <div class="wcenter" id="wcenter"><b id="wres">—</b><small id="wsub">Prêt</small></div>
+        </div>
+        <div class="wlegend" id="wlegend" aria-label="Gains possibles"></div>
+      </div>
+@@JS
+/* ================= WHEEL ================= */
+const PAT={ low:[[1.5,1],[1.2,7],[0,2]], med:[[0,5],[1.5,2],[1.9,1],[2,1],[3,1]] };
+const W0={ risk:['low','med','high'].includes(store.risk)?store.risk:'med', n:[10,20,30,40,50].includes(store.n)?store.n:30, segs:[], angle:0, spinning:false, win:-1, glow:0, locked:false, lastIdx:null };
+const cv=$('#wcv'), g2=cv.getContext('2d'), box=$('#wbox'), ptr=$('#wptr');
+let S2=0, dpr=1;
+function status(h){ $('#status').innerHTML=h; }
+function colorOf(m){ if(m===0) return '#2f4553'; if(m<1.3) return '#c9d6ff'; if(m<1.6) return '#2cf0c2'; if(m<1.95) return '#18a5ff'; if(m<2.5) return '#ffc83d'; if(m<5) return '#ff7a1f'; return '#ff3d6e'; }
+const lab=m=>m===0?'0,00×':(m>=10?m.toFixed(2):m.toFixed(2)).replace('.',',')+'×';
+function build(){
+  const N=W0.n; let items=[];
+  if(W0.risk==='high'){ items=[[0,N-1],[r2(.99*N),1]]; }
+  else items=PAT[W0.risk].map(([m,c])=>[m,c*N/10]);
+  const zeros=(items.find(x=>x[0]===0)||[0,0])[1];
+  let others=[]; items.filter(x=>x[0]!==0).forEach(([m,c])=>{ for(let i=0;i<c;i++) others.push(m); });
+  others.sort((a,b)=>b-a); const mix=[]; while(others.length){ mix.push(others.shift()); if(others.length) mix.push(others.pop()); }
+  const segs=new Array(N).fill(null);
+  for(let i=0;i<zeros;i++) segs[Math.floor((i+.5)*N/zeros)%N]=0;
+  let j=0; for(let i=0;i<N;i++) if(segs[i]===null) segs[i]=mix[j++];
+  for(let i=0;i<N;i++) if(segs[i]===null||segs[i]===undefined) segs[i]=0;
+  W0.segs=segs; W0.win=-1; legend(); draw();
+}
+function legend(){
+  const L=$('#wlegend'); L.innerHTML=''; const cnt={};
+  W0.segs.forEach(m=>cnt[m]=(cnt[m]||0)+1);
+  Object.keys(cnt).map(Number).sort((a,b)=>a-b).forEach(m=>{ const s=document.createElement('span'); s.dataset.m=m; s.style.setProperty('--c',colorOf(m)); s.innerHTML='<i></i><b></b><em></em>'; s.querySelector('i').style.background=colorOf(m); s.querySelector('b').textContent=lab(m); s.querySelector('em').textContent=(cnt[m]/W0.n*100).toFixed(cnt[m]/W0.n*100<10?1:0).replace('.',',')+' %'; L.appendChild(s); });
+}
+function size(){ S2=Math.max(200,box.clientWidth); dpr=Math.min(2,window.devicePixelRatio||1); cv.width=Math.round(S2*dpr); cv.height=Math.round(S2*dpr); draw(); }
+function draw(){
+  if(!S2) return;
+  g2.setTransform(dpr,0,0,dpr,0,0); g2.clearRect(0,0,S2,S2);
+  const c=S2/2, R=S2/2-18, r=R*.7, N=W0.n, seg=Math.PI*2/N, gap=Math.min(.02,seg*.08);
+  /* anneau de fond */
+  g2.fillStyle='#0a1124'; g2.beginPath(); g2.arc(c,c,R+10,0,Math.PI*2); g2.fill();
+  g2.strokeStyle='rgba(34,52,99,1)'; g2.lineWidth=2; g2.beginPath(); g2.arc(c,c,R+10,0,Math.PI*2); g2.stroke();
+  g2.save(); g2.translate(c,c); g2.rotate(W0.angle);
+  for(let i=0;i<N;i++){
+    const a0=-Math.PI/2+i*seg+gap/2, a1=-Math.PI/2+(i+1)*seg-gap/2, m=W0.segs[i], isW=i===W0.win;
+    g2.beginPath(); g2.arc(0,0,R,a0,a1); g2.arc(0,0,r,a1,a0,true); g2.closePath();
+    g2.fillStyle=colorOf(m);
+    if(W0.win>=0&&!isW) g2.globalAlpha=.45; else g2.globalAlpha=1;
+    if(isW&&W0.glow>0){ g2.save(); g2.shadowColor=colorOf(m); g2.shadowBlur=26*W0.glow; g2.fill(); g2.restore(); } else g2.fill();
+    g2.globalAlpha=1;
+    /* liseré intérieur pour le relief */
+    g2.beginPath(); g2.arc(0,0,r+3,a0,a1); g2.strokeStyle='rgba(0,0,0,.22)'; g2.lineWidth=5; g2.stroke();
+  }
+  g2.restore();
+  /* moyeu */
+  const gr=g2.createRadialGradient(c,c,r*.2,c,c,r-6); gr.addColorStop(0,'#14204a'); gr.addColorStop(1,'#0a1124');
+  g2.fillStyle=gr; g2.beginPath(); g2.arc(c,c,r-6,0,Math.PI*2); g2.fill();
+  g2.strokeStyle='rgba(34,52,99,1)'; g2.lineWidth=2; g2.stroke();
+}
+function idxAt(angle){ const seg=Math.PI*2/W0.n; let a=(-angle)%(Math.PI*2); if(a<0) a+=Math.PI*2; return Math.floor(a/seg)%W0.n; }
+let flickT=0;
+function flick(){ ptr.style.setProperty('--fl','-14deg'); clearTimeout(flickT); flickT=setTimeout(()=>ptr.style.setProperty('--fl','0deg'),55); }
+
+function spin(){
+  if(W0.spinning) return null;
+  const b=takeBet(); if(!b){ refresh(); return null; }
+  W0.spinning=true; applyLock();
+  const N=W0.n, seg=Math.PI*2/N, i=Math.floor(rnd()*N), u=.15+rnd()*.7, m=W0.segs[i];
+  W0.win=-1; W0.glow=0; document.querySelectorAll('#wlegend span').forEach(s=>s.classList.remove('on'));
+  const wc=$('#wcenter'); wc.classList.remove('pop'); $('#wres').textContent='…'; $('#wres').style.color=''; $('#wsub').textContent='Ça tourne';
+  const a0=W0.angle, target=-(i+u)*seg; let delta=(target-a0)%(Math.PI*2); if(delta<0) delta+=Math.PI*2;
+  const turns=auto?2:4, a1=a0+turns*Math.PI*2+delta, dur=auto?1300:2900, t0=performance.now();
+  W0.lastIdx=idxAt(a0);
+  return new Promise(res=>{
+    const step=t=>{
+      const k=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-k,4);
+      W0.angle=a0+(a1-a0)*e;
+      const id=idxAt(W0.angle); if(id!==W0.lastIdx){ W0.lastIdx=id; sfx.tick(330+(1-k)*120,.04); flick(); }
+      draw();
+      if(k<1){ requestAnimationFrame(step); return; }
+      W0.angle=a1%(Math.PI*2); W0.win=i; finish(b,m); glowIn(); res();
+    };
+    requestAnimationFrame(step);
+  });
+}
+function glowIn(){ const t0=performance.now(); const st=t=>{ const k=Math.min(1,(t-t0)/350); W0.glow=k; draw(); if(k<1) requestAnimationFrame(st); }; requestAnimationFrame(st); }
+function finish(b,m){
+  const pay=settle(b,m);
+  const wc=$('#wcenter'); $('#wres').textContent=lab(m); $('#wres').style.color=m>0?colorOf(m):'var(--mine)'; $('#wsub').textContent=m>0?'+'+fmt(pay):'Perdu';
+  void wc.offsetWidth; wc.classList.add('pop');
+  const chip=document.querySelector('#wlegend span[data-m="'+m+'"]'); if(chip) chip.classList.add('on');
+  if(m===0){ sfx.dull(); status('Perdu · −'+fmt(b)); }
+  else{ const tier=m<2?0:m<5?1:m<20?2:3; sfx.thump(Math.min(11,2+Math.round(Math.log2(m)*3))); if(m>=1.9) sfx.win(tier); if(m>=10){ flash('gold'); vib([30,30,60]); } else vib(12);
+    status('Gagné ! '+lab(m)+' · <b'+(m>=5?' class="g"':'')+'>+'+fmt(pay)+'</b>'); }
+  hist(lab(m),m>=1);
+  W0.spinning=false; applyLock(); refresh();
+}
+function segSync(){ document.querySelectorAll('#risk button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===W0.risk))); document.querySelectorAll('#segs button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.v===W0.n))); }
+function applyLock(){ const d=W0.locked||W0.spinning; document.querySelectorAll('#risk button,#segs button').forEach(b=>b.disabled=d); }
+$('#risk').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||b.disabled) return; W0.risk=b.dataset.v; segSync(); sfx.ui(); build(); save(); });
+$('#segs').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||b.disabled) return; W0.n=+b.dataset.v; segSync(); sfx.ui(); build(); save(); });
+if(window.ResizeObserver) new ResizeObserver(size).observe(box); else window.addEventListener('resize',size);
+
+const G={
+  main(){ spin(); },
+  cta(){ return W0.spinning?{label:'Ça tourne…',disabled:true}:{label:'Miser'}; },
+  busy:()=>W0.spinning,
+  autoReady:()=>true,
+  autoStep(){ return spin()||Promise.resolve(); },
+  autoGap:()=>350,
+  lock(l){ W0.locked=l; applyLock(); },
+  saveState:()=>({risk:W0.risk,n:W0.n}),
+  status
+};
+segSync(); build(); size(); kitInit();

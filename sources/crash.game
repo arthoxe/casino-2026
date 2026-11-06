@@ -1,0 +1,173 @@
+@@META
+title=Neon Crash
+icon=<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 27 C12 26 20 20 27 6" fill="none" stroke="#2cf0c2" stroke-width="3.2" stroke-linecap="round"/><circle cx="27" cy="6" r="3.4" fill="#ffc83d"/><path d="M4 28h24" stroke="#18a5ff" stroke-width="2" stroke-linecap="round" opacity=".7"/></svg>
+a=Neon
+b=Crash
+key=neon-crash-v1
+keyhint=miser / encaisser
+@@CSS
+.crow:empty::before{content:'Les derniers crashs s’afficheront ici';font-size:12px;color:var(--mute);padding:6px 0}
+.crow{display:flex;gap:6px;overflow:hidden;min-height:30px;mask-image:linear-gradient(90deg,#000 80%,transparent);-webkit-mask-image:linear-gradient(90deg,#000 80%,transparent)}
+.crow span{flex:none;font-family:var(--f-mono);font-size:12px;font-weight:700;padding:6px 10px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:var(--mute)}
+.crow span.mid{color:var(--gem);border-color:rgba(44,240,194,.3);background:rgba(44,240,194,.08)}
+.crow span.hi{color:var(--gold);border-color:rgba(255,200,61,.35);background:rgba(255,200,61,.08)}
+.crow span.lo{color:var(--mine);border-color:rgba(255,61,110,.3);background:rgba(255,61,110,.07)}
+.crow span.new{animation:slidein .3s ease-out}
+.cgraph{position:relative;width:100%;aspect-ratio:16/10;max-height:470px;min-height:240px;border-radius:16px;background:radial-gradient(120% 90% at 0% 100%,rgba(44,240,194,.07),transparent 60%),var(--panel2);border:1px solid var(--line);overflow:hidden}
+.cgraph canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.cbig{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;text-align:center}
+.cbig b{font-family:var(--f-display);font-weight:900;font-size:clamp(42px,9vw,90px);line-height:1;font-variant-numeric:tabular-nums;color:var(--fg);text-shadow:0 4px 30px rgba(0,0,0,.5);transition:color .2s,text-shadow .2s}
+.cbig small{white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);background:rgba(6,10,20,.55);padding:5px 10px;border-radius:99px}
+.cbig.run b{color:#fff}
+.cbig.cashed small{color:var(--gold);background:rgba(255,200,61,.1)}
+.cbig.crash b{color:var(--mine);text-shadow:0 0 34px rgba(255,61,110,.45);animation:cpop .4s cubic-bezier(.3,1.6,.5,1)}
+.cbig.crash small{color:var(--mine)}
+.cbig.won b{color:var(--gold);text-shadow:0 0 34px rgba(255,200,61,.45)}
+@keyframes cpop{0%{transform:scale(1.18)}100%{transform:scale(1)}}
+@@PARAMS
+      <div class="field">
+        <label for="cashat">Encaissement auto</label>
+        <div class="inp"><input id="cashat" type="text" inputmode="decimal" autocomplete="off" placeholder="aucun"><i>×</i></div>
+        <p class="hint" id="cashhint">Facultatif en manuel : laisse vide pour encaisser toi-même.</p>
+      </div>
+      <div class="field">
+        <span class="lbl">Vitesse de l’avion</span>
+        <div class="seg" id="cspd" role="group" aria-label="Vitesse de l’avion"><button type="button" data-v="1">×1</button><button type="button" data-v="2">×2</button><button type="button" data-v="5">×5</button><button type="button" data-v="10">×10</button></div>
+      </div>
+@@AUTO
+@@STAGE
+      <div class="crow" id="crow" aria-label="Derniers crashs"></div>
+      <div class="cgraph" id="cgraph">
+        <canvas id="ccv" aria-hidden="true"></canvas>
+        <div class="cbig" id="cbig"><b id="cm">1,00×</b><small id="csub">Prêt au décollage</small></div>
+      </div>
+      <p class="status" id="status" aria-live="polite">Mise, puis encaisse avant le crash.</p>
+@@JS
+/* ================= CRASH ================= */
+const KG=0.12; /* m(t) = e^(0,12 t) : 2× vers 5,8 s, 10× vers 19 s */
+const C={ spd:[1,2,5,10].includes(store.cspd)?store.cspd:1, last:0, state:'idle', bet:0, P:1, t0:0, t:0, m:1, cashed:false, cashM:0, cashT:0, cashAt:null, hum:null, nextMs:0, resolve:null, crashes:Array.isArray(store.crashes)?store.crashes.slice(-20):[] };
+const MS=[1.5,2,3,5,10,20,50,100,250,500,1000];
+const cv=$('#ccv'), g2=cv.getContext('2d'), graph=$('#cgraph'), cbig=$('#cbig'), cm=$('#cm'), csub=$('#csub');
+let W=0,H=0,dpr=1;
+const nf=v=>v.toFixed(2).replace('.',',');
+function status(h){ $('#status').innerHTML=h; }
+function parseCash(){ const v=parseFloat(String($('#cashat').value).replace(',','.')); return isFinite(v)?v:0; }
+function crashPoint(){ const u=rnd(); return Math.max(1,Math.min(1e4,Math.floor(99/(1-u))/100)); }
+function size(){ const r=graph.getBoundingClientRect(); W=Math.max(200,r.width); H=Math.max(160,r.height); dpr=Math.min(2,window.devicePixelRatio||1); cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); render(); }
+function nice(range,max){ const c=[.1,.2,.25,.5,1,2,2.5,5,10,20,25,50,100,200,250,500,1000,2000,5000]; for(const s of c) if(range/s<=max) return s; return 10000; }
+function render(){
+  g2.setTransform(dpr,0,0,dpr,0,0); g2.clearRect(0,0,W,H);
+  const pl=54, pr=26, pt=22, pb=32, gw=W-pl-pr, gh=H-pt-pb;
+  const t=C.state==='idle'?0:C.t, m=C.state==='idle'?1:C.m;
+  const maxX=Math.max(8,t/0.82), maxY=Math.max(2,1+(m-1)/0.78);
+  const X=tt=>pl+tt/maxX*gw, Y=mm=>pt+gh-(mm-1)/(maxY-1)*gh;
+  /* grille */
+  g2.font='600 11px "JetBrains Mono",ui-monospace,monospace'; g2.textBaseline='middle';
+  const ys=nice(maxY-1,5); g2.strokeStyle='rgba(141,155,198,.12)'; g2.lineWidth=1; g2.fillStyle='rgba(141,155,198,.75)'; g2.textAlign='right';
+  for(let v=1;v<=maxY+1e-9;v+=ys){ const y=Math.round(Y(v))+.5; g2.beginPath(); g2.moveTo(pl,y); g2.lineTo(W-pr,y); g2.stroke(); g2.fillText(nf(v)+'×',pl-8,y); }
+  const xs=nice(maxX,7); g2.textAlign='center'; g2.textBaseline='top';
+  for(let v=0;v<=maxX+1e-9;v+=xs){ const x=Math.round(X(v))+.5; g2.beginPath(); g2.moveTo(x,pt); g2.lineTo(x,pt+gh); g2.stroke(); g2.fillText(Math.round(v)+'s',x,pt+gh+8); }
+  if(C.state==='idle') return;
+  /* courbe */
+  const crashed=C.state==='over', N=Math.max(24,Math.min(160,Math.round(gw/6)));
+  const pts=[]; for(let i=0;i<=N;i++){ const tt=t*i/N; pts.push([X(tt),Y(Math.exp(KG*tt))]); }
+  const col=crashed&&!C.cashed?'#ff3d6e':crashed?'#ffc83d':null;
+  const fill=g2.createLinearGradient(0,pt,0,pt+gh);
+  fill.addColorStop(0,col==='#ff3d6e'?'rgba(255,61,110,.28)':'rgba(44,240,194,.26)'); fill.addColorStop(1,'rgba(44,240,194,0)');
+  g2.beginPath(); g2.moveTo(pts[0][0],pt+gh); for(const p of pts) g2.lineTo(p[0],p[1]); g2.lineTo(pts[N][0],pt+gh); g2.closePath(); g2.fillStyle=fill; g2.fill();
+  let stroke; if(col) stroke=col; else { stroke=g2.createLinearGradient(pl,0,Math.max(pl+1,pts[N][0]),0); stroke.addColorStop(0,'#18a5ff'); stroke.addColorStop(.6,'#2cf0c2'); stroke.addColorStop(1,'#ffe38a'); }
+  g2.save(); g2.shadowColor=col||'rgba(44,240,194,.8)'; g2.shadowBlur=14; g2.lineWidth=4; g2.lineCap='round'; g2.lineJoin='round'; g2.strokeStyle=stroke;
+  g2.beginPath(); pts.forEach((p,i)=>i?g2.lineTo(p[0],p[1]):g2.moveTo(p[0],p[1])); g2.stroke(); g2.restore();
+  /* point d'encaissement */
+  if(C.cashed){ const x=X(C.cashT), y=Y(C.cashM); g2.save(); g2.fillStyle='#ffc83d'; g2.shadowColor='rgba(255,200,61,.9)'; g2.shadowBlur=14; g2.beginPath(); g2.arc(x,y,6,0,6.2832); g2.fill(); g2.restore();
+    const tx=nf(C.cashM)+'×'; g2.font='700 12px "JetBrains Mono",ui-monospace,monospace'; const tw=g2.measureText(tx).width+14; const bx=Math.min(W-pr-tw,Math.max(pl,x-tw/2)), by=Math.max(pt,y-34);
+    g2.fillStyle='rgba(255,200,61,.95)'; g2.beginPath(); g2.roundRect?g2.roundRect(bx,by,tw,22,7):g2.rect(bx,by,tw,22); g2.fill(); g2.fillStyle='#2a1a00'; g2.textAlign='center'; g2.textBaseline='middle'; g2.fillText(tx,bx+tw/2,by+11.5); }
+  /* tête de la courbe */
+  const hx=pts[N][0], hy=pts[N][1];
+  if(!crashed){ const pulse=(performance.now()%900)/900; g2.strokeStyle='rgba(255,227,138,'+(.5*(1-pulse)).toFixed(3)+')'; g2.lineWidth=2; g2.beginPath(); g2.arc(hx,hy,7+pulse*12,0,6.2832); g2.stroke();
+    g2.save(); g2.fillStyle='#fff'; g2.shadowColor='rgba(255,227,138,1)'; g2.shadowBlur=16; g2.beginPath(); g2.arc(hx,hy,6,0,6.2832); g2.fill(); g2.restore(); }
+  else if(!C.cashed){ g2.save(); g2.strokeStyle='#ff3d6e'; g2.lineWidth=3.5; g2.lineCap='round'; g2.shadowColor='rgba(255,61,110,.9)'; g2.shadowBlur=12; g2.beginPath(); g2.moveTo(hx-7,hy-7); g2.lineTo(hx+7,hy+7); g2.moveTo(hx+7,hy-7); g2.lineTo(hx-7,hy+7); g2.stroke(); g2.restore(); }
+}
+function setBig(cls,txt,sub){ cbig.className='cbig '+cls; cm.textContent=txt; csub.textContent=sub; }
+function pushCrash(P){
+  C.crashes.push(P); if(C.crashes.length>20) C.crashes.shift(); renderCrashes(true); save();
+}
+function renderCrashes(isNew){ const row=$('#crow'); row.innerHTML=''; C.crashes.slice().reverse().forEach((v,i)=>{ const s=document.createElement('span'); s.className=(v<1.5?'lo':v<10?'mid':'hi')+(isNew&&i===0?' new':''); s.textContent=nf(v)+'×'; row.appendChild(s); }); }
+
+function start(){
+  if(C.state==='running') return null;
+  const at=parseCash();
+  if(auto&&!(at>=1.01)) return null;
+  const b=takeBet(); if(!b){ refresh(); return null; }
+  Object.assign(C,{ state:'running', bet:b, P:crashPoint(), t0:performance.now(), last:performance.now(), t:0, m:1, cashed:false, cashM:0, cashT:0, cashAt:at>=1.01?at:null, nextMs:0 });
+  lock(true); setBig('run','1,00×',C.cashAt?'Encaissement auto à '+nf(C.cashAt)+'×':'En vol');
+  status('En vol… encaisse avant le crash.');
+  sfx.whoosh(); C.hum=null; /* plus de son de moteur pendant la montée */ refresh();
+  const pr=new Promise(r=>C.resolve=r);
+  requestAnimationFrame(frame);
+  return pr;
+}
+function cash(m){
+  if(C.state!=='running'||C.cashed) return;
+  m=Math.max(1,Math.floor(m*100)/100);
+  C.cashed=true; C.cashM=m; C.cashT=Math.log(m)/KG;
+  const pay=settle(C.bet,m);
+  hist(nf(m)+'×',true);
+  const tier=m<2?0:m<5?1:m<20?2:3;
+  sfx.thump(Math.min(11,3+Math.round(Math.log2(m)*2))); sfx.win(tier); if(m>=5) flash('gold'); vib([20,20,40]);
+  C.hum&&C.hum.soft();
+  csub.textContent='Encaissé à '+nf(m)+'× · +'+fmt(pay); cbig.classList.add('cashed');
+  status('Encaissé à '+nf(m)+'× · <b class="g">+'+fmt(pay)+'</b>');
+  refresh();
+}
+function crash(){
+  C.state='over'; C.m=C.P; C.t=Math.log(C.P)/KG;
+  C.hum&&C.hum.stop(); C.hum=null;
+  if(C.cashed){ setBig('won',nf(C.P)+'×','Encaissé à '+nf(C.cashM)+'×'); sfx.dull(.5); }
+  else{
+    settle(C.bet,0); hist('0,00×',false);
+    setBig('crash',nf(C.P)+'×','Crash !'); sfx.boom(); flash('red'); shake(graph); vib([60,40,120]);
+    status('Crash à '+nf(C.P)+'× · −'+fmt(C.bet));
+  }
+  render(); pushCrash(C.P);
+  lock(auto); refresh();
+  const r=C.resolve; C.resolve=null; r&&r();
+}
+function frame(now){
+  if(C.state!=='running') return;
+  /* temps de jeu : avance selon la vitesse choisie, modifiable en cours de vol */
+  const sp=C.spd, t=C.t+Math.max(0,(now-C.last)/1000)*sp; C.last=now; let m=Math.exp(KG*t);
+  if(!C.cashed&&C.cashAt&&C.cashAt<=C.P&&m>=C.cashAt) cash(C.cashAt);
+  if(m>=C.P){ crash(); return; }
+  C.t=t; C.m=m;
+  while(C.nextMs<MS.length&&m>=MS[C.nextMs]){ if(!C.cashed) sfx.thump(Math.min(11,2+C.nextMs),.7); C.nextMs++; }
+  C.hum&&C.hum.set(m);
+  cm.textContent=nf(m)+'×';
+  if(!C.cashed&&!auto){ const c=$('#cta'); c.textContent='Encaisser '+fmt(C.bet*m); }
+  render();
+  requestAnimationFrame(frame);
+}
+
+$('#cashat').addEventListener('input',refresh);
+$('#cashat').addEventListener('change',e=>{ const v=parseCash(); e.target.value=v>=1.01?v.toFixed(2):''; refresh(); save(); });
+$('#cashat').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); } });
+if(window.ResizeObserver) new ResizeObserver(size).observe(graph); else window.addEventListener('resize',size);
+
+const G={
+  main(){ if(C.state==='running'){ if(!C.cashed) cash(C.m); return; } start(); },
+  cta(){ if(C.state==='running') return C.cashed?{label:'Encaissé',disabled:true}:{label:'Encaisser '+fmt(C.bet*C.m),cls:'cash'}; return {label:'Miser'}; },
+  busy:()=>C.state==='running',
+  autoReady(show){ const ok=parseCash()>=1.01; if(!ok&&show) status('En auto, indique un encaissement auto de 1,01× ou plus.'); return ok; },
+  autoStep(){ return start()||Promise.resolve(); },
+  autoGap:()=>Math.max(350,Math.round(1100/C.spd)),
+  lock(l){ $('#cashat').disabled=l; },
+  onMode(m){ $('#cashhint').textContent=m==='auto'?'Obligatoire en auto : 1,01× ou plus.':'Facultatif en manuel : laisse vide pour encaisser toi-même.'; },
+  onMute(m){ if(m&&C.hum){ C.hum.stop(); C.hum=null; } },
+  saveState:()=>({cashat:$('#cashat').value,crashes:C.crashes,cspd:C.spd}),
+  status
+};
+if(typeof store.cashat==='string') $('#cashat').value=store.cashat;
+function spdSync(){ document.querySelectorAll('#cspd button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.v===C.spd))); }
+$('#cspd').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; C.spd=+b.dataset.v; spdSync(); sfx.ui(); save(); });
+spdSync(); renderCrashes(false); size(); kitInit();
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(render);

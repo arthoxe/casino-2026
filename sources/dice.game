@@ -1,0 +1,160 @@
+@@META
+title=Neon Dice
+icon=<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="4" width="24" height="24" rx="7" fill="#2cf0c2"/><circle cx="11" cy="11" r="2.6" fill="#06231d"/><circle cx="21" cy="21" r="2.6" fill="#06231d"/><circle cx="21" cy="11" r="2.6" fill="#06231d"/><circle cx="11" cy="21" r="2.6" fill="#06231d"/></svg>
+a=Neon
+b=Dice
+key=neon-dice-v1
+keyhint=lancer / arrêter l’auto
+@@CSS
+.dhead{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 0 0}
+.dres{font-family:var(--f-display);font-weight:900;font-size:clamp(52px,10vw,92px);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.01em;color:var(--fg);transition:color .2s,text-shadow .25s}
+.dres.win{color:var(--gem);text-shadow:0 0 32px rgba(44,240,194,.45)}
+.dres.lose{color:var(--mine);text-shadow:0 0 32px rgba(255,61,110,.35)}
+.dres.pop{animation:dpop .38s cubic-bezier(.3,1.6,.5,1)}
+@keyframes dpop{0%{transform:scale(.86)}100%{transform:scale(1)}}
+.dtrack-wrap{padding:52px 4px 6px;display:flex;flex-direction:column;gap:12px}
+.dscale{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:12px;font-weight:700;color:var(--mute);padding:0 24px}
+.dtrack{position:relative;height:60px;border-radius:18px;padding:0 24px;display:flex;align-items:center;background:var(--panel2);border:1px solid var(--line);touch-action:none;cursor:pointer;user-select:none;-webkit-user-select:none}
+.dtrack.locked{cursor:default}
+.dbar{position:relative;height:10px;flex:1;border-radius:99px;background:linear-gradient(90deg,var(--c1,#ff3d6e) 0 var(--p,50%),var(--c2,#2cf0c2) var(--p,50%) 100%)}
+.dbar::after{content:'';position:absolute;inset:-6px -2px;border-radius:99px;opacity:0;pointer-events:none}
+.dbar.gw::after{animation:glow-w .6s ease-out}
+.dbar.gl::after{animation:glow-l .6s ease-out}
+@keyframes glow-w{0%{opacity:1;box-shadow:0 0 22px 4px rgba(44,240,194,.55)}100%{opacity:0}}
+@keyframes glow-l{0%{opacity:1;box-shadow:0 0 22px 4px rgba(255,61,110,.45)}100%{opacity:0}}
+.dhandle{position:absolute;top:50%;left:var(--p,50%);width:36px;height:36px;transform:translate(-50%,-50%);border-radius:10px;background:linear-gradient(180deg,#6aa8ff,#2f6be0);box-shadow:0 4px 0 #1d4396,0 8px 18px rgba(24,165,255,.35);display:flex;align-items:center;justify-content:center;gap:3px;cursor:grab;transition:transform .12s,box-shadow .12s;z-index:2}
+.dhandle i{width:3px;height:14px;border-radius:2px;background:rgba(255,255,255,.7)}
+.dtrack:not(.locked) .dhandle:hover,.dtrack.drag .dhandle{transform:translate(-50%,-50%) scale(1.08);box-shadow:0 4px 0 #1d4396,0 8px 24px rgba(24,165,255,.55)}
+.dtrack.drag .dhandle{cursor:grabbing}
+.dtrack.locked .dhandle{cursor:default;filter:saturate(.6)}
+.dmarker{position:absolute;bottom:calc(100% + 30px);left:var(--r,50%);transform:translateX(-50%);opacity:0;transition:left var(--md,.42s) cubic-bezier(.22,1.15,.4,1),opacity .2s;pointer-events:none;z-index:3}
+.dmarker.show{opacity:1}
+.dmarker b{display:block;font-family:var(--f-mono);font-weight:700;font-size:15px;padding:7px 11px;border-radius:10px;background:#e9efff;color:#0a1124;box-shadow:0 8px 18px rgba(0,0,0,.45);position:relative;font-variant-numeric:tabular-nums;transition:background .15s,color .15s}
+.dmarker b::after{content:'';position:absolute;left:50%;top:100%;transform:translateX(-50%);border:7px solid transparent;border-top-color:#e9efff;transition:border-color .15s}
+.dmarker.win b{background:var(--gem);color:#04201b}.dmarker.win b::after{border-top-color:var(--gem)}
+.dmarker.lose b{background:var(--mine);color:#fff}.dmarker.lose b::after{border-top-color:var(--mine)}
+.dmarker.land b{animation:mland .32s cubic-bezier(.3,1.7,.5,1)}
+@keyframes mland{0%{transform:scale(.78)}100%{transform:scale(1)}}
+.dstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.dstats{grid-template-columns:minmax(0,1fr)}}
+.dbox{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.dbox>label,.dbox>.lbl{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.dbox .inp{background:#070d1c}
+.dir{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#070d1c;border:1px solid var(--line);border-radius:12px;padding:12px;font-family:var(--f-mono);font-weight:700;font-size:16px;transition:border-color .15s}
+.dir:hover:not(:disabled){border-color:var(--gem2)}
+.dir:disabled{opacity:.55}
+.dir svg{width:18px;height:18px;color:var(--gem2);transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
+.dir.flip svg{transform:rotate(180deg)}
+@@PARAMS
+      <div class="field">
+        <span class="lbl">Gain sur victoire</span>
+        <div class="inp ro"><input id="profit" type="text" readonly tabindex="-1" aria-label="Gain sur victoire"><i>CR</i></div>
+      </div>
+@@AUTO
+@@STAGE
+      <div class="dhead">
+        <div class="dres" id="dres"><span id="dnum">50,00</span></div>
+        <p class="status" id="status" aria-live="polite">Règle ta chance avec le curseur, puis mise.</p>
+      </div>
+      <div class="dtrack-wrap">
+        <div class="dscale" aria-hidden="true"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+        <div class="dtrack" id="track">
+          <div class="dbar" id="dbar">
+            <div class="dmarker" id="marker" aria-hidden="true"><b id="mval">0,00</b></div>
+            <div class="dhandle" id="handle" role="slider" tabindex="0" aria-label="Seuil du lancer" aria-valuemin="2" aria-valuemax="98" aria-valuenow="50"><i></i><i></i><i></i></div>
+          </div>
+        </div>
+      </div>
+      <div class="dstats">
+        <div class="dbox"><label for="dmult">Multiplicateur</label><div class="inp"><input id="dmult" type="text" inputmode="decimal" autocomplete="off"><i>×</i></div></div>
+        <div class="dbox"><span class="lbl" id="dirlbl">Plus de</span><button class="dir" id="dir" type="button" title="Inverser plus de / moins de"><span id="dirval">50,00</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg></button></div>
+        <div class="dbox"><label for="dchance">Chance de gain</label><div class="inp"><input id="dchance" type="text" inputmode="decimal" autocomplete="off"><i>%</i></div></div>
+      </div>
+@@JS
+/* ================= DICE ================= */
+const D={ target:(store.target>=2&&store.target<=98)?store.target:50, dir:store.dir==='under'?'under':'over', busy:false, lastR:null, streak:0, locked:false, drag:false };
+const track=$('#track'), bar=$('#dbar'), handle=$('#handle'), marker=$('#marker'), mval=$('#mval'), dnum=$('#dnum'), dres=$('#dres');
+const chance=()=>D.dir==='over'?100-D.target:D.target;
+const multVal=()=>99/chance();
+const nf=v=>v.toFixed(2).replace('.',',');
+function status(h){ $('#status').innerHTML=h; }
+function profit(){ const b=curBet(); $('#profit').value=fmt(Math.max(0,b*multVal()-b)); }
+function syncUI(src){
+  bar.style.setProperty('--p',D.target+'%');
+  bar.style.setProperty('--c1',D.dir==='over'?'var(--mine)':'var(--gem)');
+  bar.style.setProperty('--c2',D.dir==='over'?'var(--gem)':'var(--mine)');
+  handle.setAttribute('aria-valuenow',String(D.target)); handle.setAttribute('aria-valuetext',(D.dir==='over'?'Plus de ':'Moins de ')+nf(D.target));
+  $('#dirlbl').textContent=D.dir==='over'?'Plus de':'Moins de'; $('#dirval').textContent=nf(D.target);
+  if(src!=='mult') $('#dmult').value=multVal().toFixed(4);
+  if(src!=='chance') $('#dchance').value=chance().toFixed(2);
+  profit();
+}
+let lastInt=null;
+function setTarget(v,src,silent){
+  v=Math.min(98,Math.max(2,Math.round(v*100)/100));
+  if(v===D.target&&src!=='force'){ syncUI(src); return; }
+  D.target=v; syncUI(src);
+  const vi=Math.round(v); if(!silent&&vi!==lastInt){ lastInt=vi; sfx.tick(240+vi*4.2,.045); }
+  save();
+}
+/* curseur : glisser sur la piste, flèches au clavier */
+function fromX(x){ const r=bar.getBoundingClientRect(); return Math.round((x-r.left)/r.width*100); }
+track.addEventListener('pointerdown',e=>{ if(D.locked||e.button!==0) return; sfx.init(); D.drag=true; track.classList.add('drag'); track.setPointerCapture(e.pointerId); setTarget(fromX(e.clientX)); });
+track.addEventListener('pointermove',e=>{ if(D.drag) setTarget(fromX(e.clientX)); });
+const endDrag=()=>{ D.drag=false; track.classList.remove('drag'); };
+track.addEventListener('pointerup',endDrag); track.addEventListener('pointercancel',endDrag);
+handle.addEventListener('keydown',e=>{ if(D.locked) return; const st=e.shiftKey?5:1;
+  if(e.key==='ArrowLeft'||e.key==='ArrowDown'){ e.preventDefault(); setTarget(Math.round(D.target)-st); }
+  else if(e.key==='ArrowRight'||e.key==='ArrowUp'){ e.preventDefault(); setTarget(Math.round(D.target)+st); } });
+function readNum(el){ const v=parseFloat(String(el.value).replace(',','.')); return isFinite(v)?v:null; }
+$('#dmult').addEventListener('change',e=>{ let m=readNum(e.target); if(m==null){ syncUI(); return; } m=Math.min(49.5,Math.max(1.0102,m)); const c=99/m; setTarget(D.dir==='over'?100-c:c,'force',true); });
+$('#dchance').addEventListener('change',e=>{ let c=readNum(e.target); if(c==null){ syncUI(); return; } c=Math.min(98,Math.max(2,c)); setTarget(D.dir==='over'?100-c:c,'force',true); });
+['#dmult','#dchance'].forEach(s=>$(s).addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); } }));
+$('#dir').addEventListener('click',()=>{ if(D.locked) return; D.dir=D.dir==='over'?'under':'over'; $('#dir').classList.toggle('flip'); setTarget(100-D.target,'force',true); sfx.ui(); });
+
+/* lancer */
+async function roll(){
+  if(D.busy) return null;
+  const b=takeBet(); if(!b){ refresh(); return null; }
+  D.busy=true;
+  const r=Math.floor(rnd()*10001)/100, win=D.dir==='over'?r>D.target:r<D.target, m=win?multVal():0;
+  const dur=auto?240:420;
+  marker.style.setProperty('--md',dur+'ms');
+  marker.classList.remove('win','lose','land'); marker.classList.add('show');
+  dres.classList.remove('win','lose'); bar.classList.remove('gw','gl');
+  void marker.offsetWidth; marker.style.setProperty('--r',r+'%');
+  const from=D.lastR==null?50:D.lastR, t0=performance.now(), n=auto?4:6;
+  for(let i=0;i<n;i++) setTimeout(()=>sfx.tick(300+i*26,.035),i*dur/n);
+  await new Promise(res=>{ const step=t=>{ const k=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-k,3), v=from+(r-from)*e; dnum.textContent=nf(v); mval.textContent=nf(v); if(k<1) requestAnimationFrame(step); else res(); }; requestAnimationFrame(step); });
+  D.lastR=r; dnum.textContent=nf(r); mval.textContent=nf(r);
+  marker.classList.add(win?'win':'lose','land');
+  dres.classList.add(win?'win':'lose'); dres.classList.remove('pop'); void dres.offsetWidth; dres.classList.add('pop');
+  bar.classList.add(win?'gw':'gl');
+  const pay=settle(b,m);
+  if(win){
+    D.streak++;
+    sfx.thump(Math.min(11,D.streak-1+Math.round(Math.log2(m)*2)));
+    if(m>=10){ sfx.win(m>=40?3:2); flash('gold'); }
+    status('Gagné ! <b>+'+fmt(pay)+'</b> · '+nf(r)+(D.streak>1?' · série de '+D.streak:'')); vib(12);
+  }else{
+    D.streak=0; sfx.dull();
+    status('Perdu · '+nf(r)+' · −'+fmt(b));
+  }
+  hist(nf(r),win);
+  D.busy=false; refresh(); return win;
+}
+
+const G={
+  main(){ roll(); },
+  cta(){ return {label:'Miser'}; },
+  busy:()=>D.busy,
+  pending:()=>D.busy,
+  autoReady:()=>true,
+  autoStep:()=>roll(),
+  autoGap:()=>160,
+  lock(l){ D.locked=l; ['#dmult','#dchance','#dir'].forEach(s=>$(s).disabled=l); handle.setAttribute('aria-disabled',String(l)); track.classList.toggle('locked',l); if(l) endDrag(); },
+  saveState:()=>({target:D.target,dir:D.dir}),
+  status, onBet:profit
+};
+if(D.dir==='under') $('#dir').classList.add('flip');
+syncUI(); kitInit();

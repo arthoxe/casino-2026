@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style></head><body>
+<title>Neon Casino</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Manrope:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Hall d'entrée : quatre tables, un seul solde fictif partagé. */
+:root{
+  --bg:#060a14; --panel:#0f1830; --panel2:#0a1124; --line:#223463; --fg:#e9efff; --mute:#8d9bc6;
+  --gem:#2cf0c2; --gem2:#18a5ff; --gold:#ffc83d; --mine:#ff3d6e;
+  --f-display:'Unbounded','Trebuchet MS',sans-serif;
+  --f-body:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  background:radial-gradient(1000px 560px at 80% -15%,rgba(24,165,255,.16),transparent 60%),radial-gradient(900px 560px at -10% 110%,rgba(44,240,194,.1),transparent 60%),var(--bg);
+  background-color:var(--bg);min-height:100vh;
+  padding-block:20px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--gem);outline-offset:3px}
+.app{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:26px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:12px;font-family:var(--f-display);font-weight:900;font-size:clamp(20px,3.6vw,28px);letter-spacing:.05em;text-transform:uppercase}
+.logo span{color:var(--gem)}
+.logo svg{width:36px;height:36px;filter:drop-shadow(0 0 12px rgba(44,240,194,.5))}
+.wallet{display:flex;align-items:center;gap:10px}
+.bal{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:7px 15px;text-align:right;min-width:160px}
+.bal small{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.bal b{font-family:var(--f-mono);font-size:20px;color:var(--gold);font-variant-numeric:tabular-nums}
+.refill{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-weight:800;font-size:13px;color:var(--gold)}
+.refill:hover{border-color:var(--gold)}
+.hero h1{margin:0;font-family:var(--f-display);font-weight:700;font-size:clamp(22px,4vw,34px);line-height:1.15;text-wrap:balance}
+.hero p{margin:8px 0 0;color:var(--mute);max-width:58ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:16px}
+.card{position:relative;display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:22px;text-decoration:none;color:inherit;
+  background:linear-gradient(180deg,var(--panel),#0b1224);border:1px solid var(--line);overflow:hidden;
+  transition:transform .25s cubic-bezier(.3,1.4,.5,1),border-color .2s,box-shadow .25s}
+.card:hover{transform:translateY(-4px);border-color:hsl(var(--h) 80% 55%/.8);box-shadow:0 18px 40px rgba(0,0,0,.35),0 0 0 1px hsl(var(--h) 80% 55%/.25),0 0 40px hsl(var(--h) 80% 55%/.12)}
+.card:active{transform:translateY(-1px)}
+.art{position:relative;height:150px;border-radius:16px;background:radial-gradient(120% 100% at 50% 0%,hsl(var(--h) 70% 50%/.14),transparent 70%),var(--panel2);border:1px solid var(--line);overflow:hidden;display:grid;place-items:center}
+.art svg{width:100%;height:100%}
+.meta{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.meta h2{margin:0;font-family:var(--f-display);font-weight:700;font-size:20px;letter-spacing:.03em;text-transform:uppercase}
+.meta h2 span{color:hsl(var(--h) 85% 60%)}
+.meta p{margin:4px 0 0;color:var(--mute);font-size:13.5px;max-width:40ch}
+.play{flex:none;font-family:var(--f-display);font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:11px 16px;border-radius:12px;color:#04201b;background:linear-gradient(180deg,#46f3cf,#1fcaa6);box-shadow:0 4px 0 #128a73;transition:filter .15s}
+.card:hover .play{filter:brightness(1.08)}
+.tag{position:absolute;z-index:2;top:26px;left:26px;font-family:var(--f-mono);font-size:11px;font-weight:700;padding:4px 8px;border-radius:8px;background:rgba(6,10,20,.7);border:1px solid var(--line);color:var(--mute)}
+/* petites animations des vignettes, discrètes */
+.g-bob{animation:bob 2.6s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-4px)}}
+.g-pop{transform-box:fill-box;transform-origin:center;animation:gpop 3.2s ease-in-out infinite}
+@keyframes gpop{0%,70%,100%{transform:scale(1)}78%{transform:scale(1.18)}}
+.p-ball{animation:pdrop 2.4s cubic-bezier(.5,0,.6,1) infinite}
+@keyframes pdrop{0%{transform:translate(0,0)}25%{transform:translate(-9px,26px)}50%{transform:translate(0,52px)}75%{transform:translate(9px,78px)}100%{transform:translate(0,104px);opacity:.0}}
+.c-line{stroke-dasharray:260;stroke-dashoffset:260;animation:cdraw 3.4s ease-in infinite}
+.c-dot{animation:cdot 3.4s ease-in infinite;offset-path:path('M30 140 C110 136 190 110 270 34')}
+@keyframes cdraw{0%{stroke-dashoffset:260}80%,100%{stroke-dashoffset:0}}
+@keyframes cdot{0%{offset-distance:0%}80%,100%{offset-distance:100%}}
+.d-mark{animation:dmark 2.8s cubic-bezier(.3,1.3,.5,1) infinite}
+@keyframes dmark{0%,15%{transform:translateX(-60px)}35%,60%{transform:translateX(48px)}80%,100%{transform:translateX(-20px)}}
+.w-spin{transform-box:view-box;transform-origin:150px 85px;animation:wspin 6s cubic-bezier(.2,.8,.3,1) infinite}
+@keyframes wspin{0%{transform:rotate(0)}70%,100%{transform:rotate(540deg)}}
+.k-pop{transform-box:fill-box;transform-origin:center;animation:kpop 3s ease-in-out infinite}
+@keyframes kpop{0%,60%,100%{transform:scale(1)}68%{transform:scale(1.15)}}
+.t-up{animation:tup 3.6s ease-in-out infinite}
+@keyframes tup{0%,100%{opacity:.25}50%{opacity:1}}
+.sect{margin:4px 0 -8px;font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);display:flex;align-items:center;gap:10px}
+.sect b{color:var(--gold)}
+.sect::after{content:'';flex:1;height:1px;background:var(--line)}
+.foot{text-align:center;color:var(--mute);font-size:12px;margin:0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="logo">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><polygon points="20,10 32,26 6,26" fill="#7ffbe3"/><polygon points="20,10 44,10 32,26" fill="#c9fff5"/><polygon points="44,10 58,26 32,26" fill="#3fe6c8"/><polygon points="6,26 32,26 32,58" fill="#1fb5b0"/><polygon points="58,26 32,26 32,58" fill="#1393d6"/></svg>
+      <div>Neon <span>Casino</span></div>
+    </div>
+    <div class="wallet">
+      <button class="refill" id="refill" type="button" hidden>Recharger 1 000</button>
+      <div class="bal"><small>Solde fictif</small><b id="bal">1 000,00</b></div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Choisis ta table</h1>
+    <p>Onze jeux, un seul solde fictif partagé. Le bouton ← en haut de chaque jeu te ramène ici.</p>
+  </section>
+
+  <h2 class="sect">Exclusifs <b>·</b> nouvelles façons de jouer, dont la 3D</h2>
+  <nav class="grid" aria-label="Jeux exclusifs">
+    <a class="card" href="couteaux.html" style="--h:25">
+      <span class="tag" style="color:var(--gold);border-color:rgba(255,200,61,.45)">Exclusif</span>
+      <div class="art" aria-hidden="true"><svg viewBox="0 0 300 150"><g class="w-spin" style="transform-origin:150px 72px"><circle cx="150" cy="72" r="56" fill="#8a5a24" stroke="#2cf0c2" stroke-width="3"/><line x1="150" y1="72" x2="206.0" y2="72.0" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="204.1" y2="86.5" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="198.5" y2="100.0" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="189.6" y2="111.6" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="178.0" y2="120.5" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="164.5" y2="126.1" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="150.0" y2="128.0" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="135.5" y2="126.1" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="122.0" y2="120.5" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="110.4" y2="111.6" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="101.5" y2="100.0" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="95.9" y2="86.5" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="94.0" y2="72.0" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="95.9" y2="57.5" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="101.5" y2="44.0" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="110.4" y2="32.4" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="122.0" y2="23.5" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="135.5" y2="17.9" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="150.0" y2="16.0" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="164.5" y2="17.9" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="178.0" y2="23.5" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="189.6" y2="32.4" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="198.5" y2="44.0" stroke="rgba(0,0,0,.2)"/><line x1="150" y1="72" x2="204.1" y2="57.5" stroke="rgba(0,0,0,.2)"/><circle cx="150" cy="72" r="7" fill="#ff3d6e"/><g stroke-linecap="round"><line x1="150" y1="16" x2="150" y2="0" stroke="#2f6be0" stroke-width="6"/><line x1="200" y1="98" x2="214" y2="106" stroke="#2f6be0" stroke-width="6"/><line x1="100" y1="98" x2="86" y2="106" stroke="#2f6be0" stroke-width="6"/></g></g><path d="M150 146 V132" stroke="#c9d6ff" stroke-width="4" stroke-linecap="round"/></svg></div>
+      <div class="meta"><div><h2>Neon <span>Couteaux</span></h2><p>Lance tes couteaux dans la cible qui tourne, gare aux clous cachés.</p></div><span class="play">Jouer</span></div>
+    </a>
+    <a class="card" href="coffre.html" style="--h:205">
+      <span class="tag" style="color:var(--gold);border-color:rgba(255,200,61,.45)">3D</span>
+      <div class="art" aria-hidden="true"><svg viewBox="0 0 300 150"><rect x="85" y="8" width="130" height="134" rx="16" fill="#16224a" stroke="#223463" stroke-width="2"/><g class="w-spin" style="transform-origin:150px 75px"><circle cx="150" cy="75" r="46" fill="#1a2650" stroke="rgba(201,214,255,.4)" stroke-width="2"/><line x1="196.0" y1="75.0" x2="190.0" y2="75.0" stroke="#e9efff" stroke-width="2"/><line x1="193.8" y1="89.2" x2="188.0" y2="87.4" stroke="#e9efff" stroke-width="2"/><line x1="187.2" y1="102.0" x2="182.4" y2="98.5" stroke="#e9efff" stroke-width="2"/><line x1="177.1" y1="112.2" x2="173.5" y2="107.3" stroke="#e9efff" stroke-width="2"/><line x1="164.2" y1="118.7" x2="162.4" y2="113.0" stroke="#e9efff" stroke-width="2"/><line x1="150.0" y1="121.0" x2="150.0" y2="115.0" stroke="#e9efff" stroke-width="2"/><line x1="135.8" y1="118.8" x2="137.7" y2="113.1" stroke="#e9efff" stroke-width="2"/><line x1="123.0" y1="112.2" x2="126.5" y2="107.4" stroke="#e9efff" stroke-width="2"/><line x1="112.8" y1="102.1" x2="117.7" y2="98.6" stroke="#e9efff" stroke-width="2"/><line x1="106.3" y1="89.3" x2="112.0" y2="87.4" stroke="#e9efff" stroke-width="2"/><line x1="104.0" y1="75.1" x2="110.0" y2="75.1" stroke="#e9efff" stroke-width="2"/><line x1="106.2" y1="60.9" x2="111.9" y2="62.7" stroke="#e9efff" stroke-width="2"/><line x1="112.7" y1="48.0" x2="117.6" y2="51.6" stroke="#e9efff" stroke-width="2"/><line x1="122.9" y1="37.8" x2="126.4" y2="42.7" stroke="#e9efff" stroke-width="2"/><line x1="135.7" y1="31.3" x2="137.6" y2="37.0" stroke="#e9efff" stroke-width="2"/><line x1="149.9" y1="29.0" x2="149.9" y2="35.0" stroke="#e9efff" stroke-width="2"/><line x1="164.1" y1="31.2" x2="162.3" y2="36.9" stroke="#e9efff" stroke-width="2"/><line x1="176.9" y1="37.7" x2="173.4" y2="42.6" stroke="#e9efff" stroke-width="2"/><line x1="187.1" y1="47.9" x2="182.3" y2="51.4" stroke="#e9efff" stroke-width="2"/><line x1="193.7" y1="60.7" x2="188.0" y2="62.5" stroke="#e9efff" stroke-width="2"/><circle cx="150" cy="75" r="18" fill="#0a1124" stroke="#ffc83d" stroke-width="2"/></g><path d="M150 22 l-7 -11 h14z" fill="#ffc83d"/><g fill="#2cf0c2"><circle cx="134" cy="16" r="3"/><circle cx="166" cy="16" r="3"/></g></svg></div>
+      <div class="meta"><div><h2>Neon <span>Coffre-fort</span></h2><p>Tourne le cadran, valide un numéro, évite l’alarme.</p></div><span class="play">Jouer</span></div>
+    </a>
+    <a class="card" href="orbite.html" style="--h:200">
+      <span class="tag" style="color:var(--gold);border-color:rgba(255,200,61,.45)">3D</span>
+      <div class="art" aria-hidden="true"><svg viewBox="0 0 300 150"><g fill="none" stroke="#2a3b6a" stroke-width="1.5"><ellipse cx="150" cy="78" rx="46" ry="18"/><ellipse cx="150" cy="78" rx="80" ry="31"/><ellipse cx="150" cy="78" rx="114" ry="44"/></g><circle cx="150" cy="78" r="16" fill="#ffd25e"/><circle cx="150" cy="78" r="26" fill="rgba(255,200,61,.18)"/><circle cx="196" cy="74" r="7" fill="#2cf0c2"/><circle cx="84" cy="96" r="9" fill="#c58bff"/><ellipse cx="84" cy="96" rx="15" ry="5" fill="none" stroke="#c58bff" stroke-width="2" opacity=".6"/><circle cx="246" cy="66" r="8" fill="#18a5ff"/><circle cx="118" cy="44" r="6" fill="#ff7a9a"/><g class="g-bob"><path d="M200 40 l4 -12 l4 12z" fill="#e9efff"/><rect x="202" y="40" width="4" height="8" fill="#e9efff"/><path d="M204 48 l-2 6 h4z" fill="#ffb020"/></g></svg></div>
+      <div class="meta"><div><h2>Neon <span>Orbite</span></h2><p>Envoie ta fusée de planète en planète… gare aux trous noirs.</p></div><span class="play">Jouer</span></div>
+    </a>
+  </nav>
+  <h2 class="sect">Tous les jeux</h2>
+  <nav class="grid" aria-label="Jeux">
+    <a class="card" href="doors.html" style="--h:45">
+      <div class="art" aria-hidden="true">
+        <svg viewBox="0 0 300 150">
+          <g font-family="Unbounded,sans-serif" font-weight="900" text-anchor="middle">
+            <rect x="72" y="22" width="46" height="100" rx="9" fill="#0f1830" stroke="#2cf0c2" stroke-width="2"/><text x="95" y="72" font-size="16" fill="#e9efff">80%</text><rect x="80" y="82" width="30" height="14" rx="4" fill="#2cf0c2"/><text x="95" y="93" font-size="9" fill="#04201b" font-family="JetBrains Mono,monospace">×1,25</text>
+            <g class="g-bob"><rect x="127" y="14" width="46" height="108" rx="9" fill="#0f1830" stroke="#ffc83d" stroke-width="2"/><text x="150" y="68" font-size="16" fill="#e9efff">50%</text><rect x="135" y="78" width="30" height="14" rx="4" fill="#ffc83d"/><text x="150" y="89" font-size="9" fill="#2a1a00" font-family="JetBrains Mono,monospace">×2,00</text></g>
+            <rect x="182" y="22" width="46" height="100" rx="9" fill="#0f1830" stroke="#ff3d6e" stroke-width="2"/><text x="205" y="72" font-size="16" fill="#e9efff">20%</text><rect x="190" y="82" width="30" height="14" rx="4" fill="#ff3d6e"/><text x="205" y="93" font-size="9" fill="#2a0010" font-family="JetBrains Mono,monospace">×5,00</text>
+          </g>
+        </svg>
+      </div>
+      <div class="meta"><div><h2>Neon <span>Doors</span></h2><p>Trois portes à chaque étape : à toi de choisir ton risque, puis d’encaisser.</p></div><span class="play">Jouer</span></div>
+    </a>
+    <a class="card" href="mines.html" style="--h:170">
+      <div class="art" aria-hidden="true">
+        <svg viewBox="0 0 300 170">
+          <g transform="translate(70,13)">
+            <g fill="#2f4553"><rect x="0" y="0" width="28" height="28" rx="5"/><rect x="32" y="0" width="28" height="28" rx="5"/><rect x="64" y="0" width="28" height="28" rx="5"/><rect x="96" y="0" width="28" height="28" rx="5"/><rect x="128" y="0" width="28" height="28" rx="5"/>
+              <rect x="0" y="32" width="28" height="28" rx="5"/><rect x="64" y="32" width="28" height="28" rx="5"/><rect x="128" y="32" width="28" height="28" rx="5"/>
+              <rect x="0" y="64" width="28" height="28" rx="5"/><rect x="32" y="64" width="28" height="28" rx="5"/><rect x="96" y="64" width="28" height="28" rx="5"/>
+              <rect x="0" y="96" width="28" height="28" rx="5"/><rect x="64" y="96" width="28" height="28" rx="5"/><rect x="96" y="96" width="28" height="28" rx="5"/><rect x="128" y="96" width="28" height="28" rx="5"/>
+              <rect x="32" y="128" width="28" height="28" rx="5" opacity=".0"/></g>
+            <g fill="#0a1626"><rect x="32" y="32" width="28" height="28" rx="5"/><rect x="96" y="32" width="28" height="28" rx="5"/><rect x="64" y="64" width="28" height="28" rx="5"/><rect x="128" y="64" width="28" height="28" rx="5"/><rect x="32" y="96" width="28" height="28" rx="5"/></g>
+            <g class="g-pop"><polygon points="40,40 52,40 56,45 46,54 36,45" fill="#2cf0c2"/></g>
+            <g class="g-pop" style="animation-delay:.5s"><polygon points="104,40 116,40 120,45 110,54 100,45" fill="#2cf0c2"/></g>
+            <g class="g-pop" style="animation-delay:1s"><polygon points="72,72 84,72 88,77 78,86 68,77" fill="#2cf0c2"/></g>
+            <g class="g-pop" style="animation-delay:1.5s"><polygon points="40,104 52,104 56,109 46,118 36,109" fill="#2cf0c2"/></g>
+            <circle cx="142" cy="80" r="7" fill="#3a4a6c"/><circle cx="142" cy="80" r="11" fill="none" stroke="#ff3d6e" stroke-width="1.5" opacity=".6"/>
+          </g>
+        </svg>
+      </div>
+      <div class="meta"><div><h2>Neon <span>Mines</span></h2><p>Retourne des cases, évite les bombes, encaisse quand tu veux.</p></div><span class="play">Jouer</span></div>
+    </a>
+
+    <a class="card" href="dice.html" style="--h:205">
+      <div class="art" aria-hidden="true">
+        <svg viewBox="0 0 300 170">
+          <text x="150" y="52" text-anchor="middle" font-family="Unbounded,sans-serif" font-weight="900" font-size="38" fill="#2cf0c2">64,20</text>
+          <rect x="40" y="108" width="220" height="10" rx="5" fill="#ff3d6e"/><rect x="150" y="108" width="110" height="10" rx="5" fill="#2cf0c2"/><rect x="145" y="108" width="12" height="10" fill="#2cf0c2"/>
+          <rect x="133" y="96" width="34" height="34" rx="9" fill="#2f6be0"/><rect x="144" y="105" width="3" height="16" rx="1.5" fill="#fff" opacity=".7"/><rect x="149" y="105" width="3" height="16" rx="1.5" fill="#fff" opacity=".7"/><rect x="154" y="105" width="3" height="16" rx="1.5" fill="#fff" opacity=".7"/>
+          <g class="d-mark"><rect x="128" y="70" width="44" height="20" rx="6" fill="#2cf0c2"/><path d="M144 90 l6 6 l6 -6z" fill="#2cf0c2"/><text x="150" y="84.5" text-anchor="middle" font-family="JetBrains Mono,monospace" font-weight="700" font-size="11" fill="#04201b">64,20</text></g>
+        </svg>
+      </div>
+      <div class="meta"><div><h2>Neon <span>Dice</span></h2><p>Règle ta chance au curseur, plus le risque est grand plus ça paie.</p></div><span class="play">Jouer</span></div>
+    </a>
+
+    <a class="card" href="plinko.html" style="--h:40">
+      <div class="art" aria-hidden="true">
+        <svg viewBox="0 0 300 170">
+          <g fill="#c9d6ff">
+            <circle cx="141" cy="30" r="3"/><circle cx="159" cy="30" r="3"/>
+            <circle cx="132" cy="56" r="3"/><circle cx="150" cy="56" r="3"/><circle cx="168" cy="56" r="3"/>
+            <circle cx="123" cy="82" r="3"/><circle cx="141" cy="82" r="3"/><circle cx="159" cy="82" r="3"/><circle cx="177" cy="82" r="3"/>
+            <circle cx="114" cy="108" r="3"/><circle cx="132" cy="108" r="3"/><circle cx="150" cy="108" r="3"/><circle cx="168" cy="108" r="3"/><circle cx="186" cy="108" r="3"/>
+          </g>
+          <g font-family="JetBrains Mono,monospace" font-weight="700" font-size="8" text-anchor="middle">
+            <rect x="96" y="128" width="20" height="15" rx="3" fill="#ff2e55"/><rect x="118" y="128" width="20" height="15" rx="3" fill="#ff7a1f"/><rect x="140" y="128" width="20" height="15" rx="3" fill="#ffc83d"/><rect x="162" y="128" width="20" height="15" rx="3" fill="#ff7a1f"/><rect x="184" y="128" width="20" height="15" rx="3" fill="#ff2e55"/>
+            <text x="106" y="138.5" fill="#1a0f00">29</text><text x="128" y="138.5" fill="#1a0f00">4</text><text x="150" y="138.5" fill="#1a0f00">0,2</text><text x="172" y="138.5" fill="#1a0f00">4</text><text x="194" y="138.5" fill="#1a0f00">29</text>
+          </g>
+          <circle class="p-ball" cx="150" cy="18" r="6" fill="#ffd25e"/>
+        </svg>
+      </div>
+      <div class="meta"><div><h2>Neon <span>Plinko</span></h2><p>Lâche des billes, regarde-les rebondir jusqu’aux multiplicateurs.</p></div><span class="play">Jouer</span></div>
+    </a>
+
+    <a class="card" href="crash.html" style="--h:45">
+      <div class="art" aria-hidden="true">
+        <svg viewBox="0 0 300 170">
+          <g stroke="rgba(141,155,198,.14)"><line x1="30" y1="140" x2="280" y2="140"/><line x1="30" y1="100" x2="280" y2="100"/><line x1="30" y1="60" x2="280" y2="60"/></g>
+          <path class="c-line" d="M30 140 C110 136 190 110 270 34" fill="none" stroke="#2cf0c2" stroke-width="4" stroke-linecap="round"/>
+          <circle class="c-dot" r="6" fill="#fff"/>
+          <text x="96" y="62" text-anchor="middle" font-family="Unbounded,sans-serif" font-weight="900" font-size="30" fill="#ffc83d">2,47×</text>
+        </svg>
+      </div>
+      <div class="meta"><div><h2>Neon <span>Crash</span></h2><p>La courbe grimpe : encaisse avant qu’elle explose.</p></div><span class="play">Jouer</span></div>
+    </a>
+    <a class="card" href="wheel.html" style="--h:190">
+      <div class="art" aria-hidden="true">
+        <svg viewBox="0 0 300 170">
+          <g class="w-spin">
+            <circle cx="150" cy="85" r="62" fill="none" stroke="#0a1124" stroke-width="2"/>
+            <g fill="none" stroke-width="20">
+              <circle cx="150" cy="85" r="56" stroke="#2f4553"/>
+              <circle cx="150" cy="85" r="56" stroke="#2cf0c2" stroke-dasharray="30 322" stroke-dashoffset="0"/>
+              <circle cx="150" cy="85" r="56" stroke="#18a5ff" stroke-dasharray="22 330" stroke-dashoffset="-88"/>
+              <circle cx="150" cy="85" r="56" stroke="#ffc83d" stroke-dasharray="22 330" stroke-dashoffset="-176"/>
+              <circle cx="150" cy="85" r="56" stroke="#ff7a1f" stroke-dasharray="22 330" stroke-dashoffset="-264"/>
+              <circle cx="150" cy="85" r="56" stroke="#2cf0c2" stroke-dasharray="22 330" stroke-dashoffset="-132"/>
+              <circle cx="150" cy="85" r="56" stroke="#c9d6ff" stroke-dasharray="18 334" stroke-dashoffset="-220"/>
+            </g>
+          </g>
+          <circle cx="150" cy="85" r="40" fill="#0a1124"/>
+          <text x="150" y="92" text-anchor="middle" font-family="Unbounded,sans-serif" font-weight="900" font-size="18" fill="#ffc83d">2×</text>
+          <path d="M150 34 l-9 -16 h18z" fill="#ffc83d"/>
+        </svg>
+      </div>
+      <div class="meta"><div><h2>Neon <span>Wheel</span></h2><p>Fais tourner la roue, de 10 à 50 segments.</p></div><span class="play">Jouer</span></div>
+    </a>
+
+    <a class="card" href="keno.html" style="--h:175">
+      <div class="art" aria-hidden="true">
+        <svg viewBox="0 0 300 170">
+          <g transform="translate(66,25)">
+            <g fill="#2f4553">
+              <rect x="0" y="0" width="16" height="16" rx="4"/><rect x="21" y="0" width="16" height="16" rx="4"/><rect x="63" y="0" width="16" height="16" rx="4"/><rect x="105" y="0" width="16" height="16" rx="4"/><rect x="126" y="0" width="16" height="16" rx="4"/><rect x="147" y="0" width="16" height="16" rx="4"/>
+              <rect x="0" y="21" width="16" height="16" rx="4"/><rect x="42" y="21" width="16" height="16" rx="4"/><rect x="63" y="21" width="16" height="16" rx="4"/><rect x="84" y="21" width="16" height="16" rx="4"/><rect x="126" y="21" width="16" height="16" rx="4"/><rect x="147" y="21" width="16" height="16" rx="4"/>
+              <rect x="21" y="42" width="16" height="16" rx="4"/><rect x="42" y="42" width="16" height="16" rx="4"/><rect x="84" y="42" width="16" height="16" rx="4"/><rect x="105" y="42" width="16" height="16" rx="4"/><rect x="147" y="42" width="16" height="16" rx="4"/>
+              <rect x="0" y="63" width="16" height="16" rx="4"/><rect x="21" y="63" width="16" height="16" rx="4"/><rect x="63" y="63" width="16" height="16" rx="4"/><rect x="84" y="63" width="16" height="16" rx="4"/><rect x="105" y="63" width="16" height="16" rx="4"/><rect x="126" y="63" width="16" height="16" rx="4"/>
+              <rect x="0" y="84" width="16" height="16" rx="4"/><rect x="42" y="84" width="16" height="16" rx="4"/><rect x="63" y="84" width="16" height="16" rx="4"/><rect x="105" y="84" width="16" height="16" rx="4"/><rect x="126" y="84" width="16" height="16" rx="4"/><rect x="147" y="84" width="16" height="16" rx="4"/>
+            </g>
+            <rect class="k-pop" x="42" y="0" width="16" height="16" rx="4" fill="#2cf0c2"/>
+            <rect class="k-pop" style="animation-delay:.6s" x="105" y="21" width="16" height="16" rx="4" fill="#2cf0c2"/>
+            <rect class="k-pop" style="animation-delay:1.2s" x="126" y="42" width="16" height="16" rx="4" fill="#2cf0c2"/>
+            <rect x="0" y="42" width="16" height="16" rx="4" fill="#0a1626" stroke="#ff3d6e" stroke-opacity=".4"/>
+            <rect class="k-pop" style="animation-delay:1.8s" x="42" y="63" width="16" height="16" rx="4" fill="#2cf0c2"/>
+            <rect x="147" y="63" width="16" height="16" rx="4" fill="#0a1626" stroke="#ff3d6e" stroke-opacity=".4"/>
+            <rect x="21" y="84" width="16" height="16" rx="4" fill="#1b8f86"/><rect x="84" y="84" width="16" height="16" rx="4" fill="#0a1626" stroke="#ff3d6e" stroke-opacity=".4"/>
+          </g>
+        </svg>
+      </div>
+      <div class="meta"><div><h2>Neon <span>Keno</span></h2><p>Choisis jusqu’à 10 numéros, 10 sont tirés au sort.</p></div><span class="play">Jouer</span></div>
+    </a>
+
+    <a class="card" href="tower.html" style="--h:160">
+      <div class="art" aria-hidden="true">
+        <svg viewBox="0 0 300 170">
+          <g transform="translate(96,12)">
+            <g fill="#2f4553"><rect x="0" y="0" width="34" height="18" rx="5"/><rect x="40" y="0" width="34" height="18" rx="5"/><rect x="80" y="0" width="34" height="18" rx="5"/>
+              <rect x="0" y="24" width="34" height="18" rx="5"/><rect x="80" y="24" width="34" height="18" rx="5"/>
+              <rect x="40" y="48" width="34" height="18" rx="5"/><rect x="80" y="48" width="34" height="18" rx="5"/>
+              <rect x="0" y="72" width="34" height="18" rx="5"/><rect x="40" y="72" width="34" height="18" rx="5"/>
+              <rect x="0" y="96" width="34" height="18" rx="5"/><rect x="80" y="96" width="34" height="18" rx="5"/>
+              <rect x="0" y="120" width="34" height="18" rx="5"/><rect x="40" y="120" width="34" height="18" rx="5"/></g>
+            <rect x="40" y="24" width="34" height="18" rx="5" fill="#ffc83d" class="t-up"/>
+            <rect x="0" y="48" width="34" height="18" rx="5" fill="#2cf0c2"/><rect x="80" y="72" width="34" height="18" rx="5" fill="#2cf0c2"/><rect x="40" y="96" width="34" height="18" rx="5" fill="#2cf0c2"/><rect x="80" y="120" width="34" height="18" rx="5" fill="#2cf0c2"/>
+          </g>
+        </svg>
+      </div>
+      <div class="meta"><div><h2>Neon <span>Tower</span></h2><p>Grimpe étage par étage sans tomber sur une bombe.</p></div><span class="play">Jouer</span></div>
+    </a>
+  </nav>
+  <p class="foot">Jeux de simulation en crédits fictifs. Aucun argent réel n’est en jeu.</p>
+</div>
+
+<script>
+(()=>{
+  const W='neon-casino-wallet';
+  const fmt=v=>(Math.round(v*100)/100).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  function read(){ try{ const w=JSON.parse(localStorage.getItem(W)||'null'); if(w&&typeof w.balance==='number'&&w.balance>=0) return w.balance; }catch(e){} return 1000; }
+  function show(){ const b=read(); document.getElementById('bal').textContent=fmt(b); document.getElementById('refill').hidden=b>=0.1; }
+  document.getElementById('refill').addEventListener('click',()=>{ try{ localStorage.setItem(W,JSON.stringify({balance:1000})); }catch(e){} show(); });
+  window.addEventListener('pageshow',show); window.addEventListener('focus',show); show();
+})();
+</script>
+
+</body></html>
